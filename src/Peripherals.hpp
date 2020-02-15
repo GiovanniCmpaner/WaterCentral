@@ -19,14 +19,14 @@ namespace Peripherals
         {
             SDA = 21,
             SCL = 22
-        }
+        };
     };
     namespace PAM8403 
     {
         enum Pins 
         {
             RIN = 25
-        }
+        };
     };
     namespace DS3231 
     {
@@ -34,7 +34,7 @@ namespace Peripherals
             INT = 34,
             SCL = 22,
             SDA = 21
-        }
+        };
     };
     namespace MPX_DP
     {
@@ -43,8 +43,8 @@ namespace Peripherals
             VOUT_1 = 33,
             VOUT_2 = 35,
             VOUT_3 = 32
-        }
-    }
+        };
+    };
     enum Pins 
     {
         BTN = 4,
