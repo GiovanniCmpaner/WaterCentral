@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <SPI.h>
 
 namespace Peripherals
 {
@@ -13,7 +14,9 @@ namespace Peripherals
             MISO = 12,
             SCK = 14
         };
-    };
+
+        static auto hspi{SPIClass{HSPI}};
+    }; // namespace SD_CARD
 
     namespace BME280
     {

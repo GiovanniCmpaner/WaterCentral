@@ -1,13 +1,10 @@
 #include <Arduino.h>
 
-#include <FS.h>
-#include <SD.h>
-#include <SPI.h>
 #include <esp_log.h>
 
+#include "Configuration.hpp"
 #include "Peripherals.hpp"
-
-static auto hspi{SPIClass{HSPI}};
+#include "WebInterface.hpp"
 
 void setup()
 {
@@ -17,15 +14,19 @@ void setup()
     log_d("begin");
 
     Peripherals::init();
-
-    if (not SD.begin(Peripherals::SD_CARD::SS, hspi) || SD.cardType() == CARD_NONE)
+    Configuration::init();
+    if (not cfg.load())
     {
-        log_e("sd fail");
+        log_e("config error");
+        return;
     }
+
+    WebInterface::init();
 
     log_d("end");
 }
 
 void loop()
 {
+    WebInterface::process();
 }

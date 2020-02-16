@@ -1,3 +1,4 @@
+
 #include <esp_log.h>
 
 #include "Peripherals.hpp"
@@ -31,5 +32,7 @@ namespace Peripherals
         digitalWrite(Peripherals::PAM8403::RIN, LOW);
         digitalWrite(Peripherals::LED_HTB, LOW);
         digitalWrite(Peripherals::PRF_CTL, HIGH);
+
+        log_d("end");
     }
-};
+}; // namespace Peripherals
