@@ -4,149 +4,139 @@
 #include <FS.h>
 #include <FastCRC.h>
 #include <SD.h>
-#include <SPI.h>
 #include <WiFi.h>
+#include <cstdio>
+#include <cstdlib>
 #include <esp_log.h>
 
 #include "Configuration.hpp"
 #include "Peripherals.hpp"
 
 static const Configuration defaultCfg{
-    {{0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED},
+    {true,
+     {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED},
      {192, 168, 1, 200},
      {255, 255, 255, 0},
      {192, 168, 1, 1},
      80,
      "WORKGROUP",
      "49WNN7F3CD@22"},
-    {{0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED},
+    {true,
+     {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED},
      {192, 168, 1, 200},
      {255, 255, 255, 0},
      {192, 168, 1, 1},
      80,
      "WaterCentral",
      "W@t3rC3ntr4l",
-     30}};
+     30},
+    {true,
+     {22, 0, 0},
+     {8, 0, 0}}};
 
 static auto stationMAC{std::array<uint8_t, 6>{}};
 static auto accessPointMAC{std::array<uint8_t, 6>{}};
 
-auto Configuration::init() -> bool
+auto Configuration::init() -> void
 {
     log_d("begin");
 
     WiFi.mode(WIFI_MODE_APSTA);
     WiFi.macAddress(stationMAC.data());
     WiFi.softAPmacAddress(accessPointMAC.data());
-
-    if (not SD.begin(Peripherals::SD_CARD::SS, Peripherals::SD_CARD::hspi) || SD.cardType() == CARD_NONE)
-    {
-        log_e("sd error");
-        return false;
-    }
+    WiFi.mode(WIFI_MODE_NULL);
 
     log_d("end");
-    return true;
 }
 
-auto Configuration::serialize(ArduinoJson::JsonDocument &doc, const Configuration &cfg) -> void
+auto Configuration::serialize(ArduinoJson::JsonVariant &json, const Configuration &cfg) -> void
 {
     {
-        auto accessPoint{doc["access_point"]};
+        auto accessPoint{json["access_point"]};
+
+        accessPoint["enabled"] = cfg.accessPoint.enabled;
+        for (auto n : cfg.accessPoint.mac)
         {
-            auto mac{accessPoint["mac"]};
-            for (auto i{0}; i < cfg.accessPoint.mac.size(); ++i)
-            {
-                mac.add(cfg.accessPoint.mac[i]);
-            }
+            accessPoint["mac"].add(n);
         }
+        for (auto n : cfg.accessPoint.ip)
         {
-            auto ip{accessPoint["ip"]};
-            for (auto i{0}; i < cfg.accessPoint.ip.size(); ++i)
-            {
-                ip.add(cfg.accessPoint.ip[i]);
-            }
+            accessPoint["ip"].add(n);
         }
+        for (auto n : cfg.accessPoint.netmask)
         {
-            auto netmask{accessPoint["netmask"]};
-            for (auto i{0}; i < cfg.accessPoint.netmask.size(); ++i)
-            {
-                netmask.add(cfg.accessPoint.netmask[i]);
-            }
+            accessPoint["netmask"].add(n);
         }
+        for (auto n : cfg.accessPoint.gateway)
         {
-            auto gateway{accessPoint["gateway"]};
-            for (auto i{0}; i < cfg.accessPoint.gateway.size(); ++i)
-            {
-                gateway.add(cfg.accessPoint.gateway[i]);
-            }
+            accessPoint["gateway"].add(n);
         }
-        {
-            auto port{accessPoint["port"]};
-            port = cfg.accessPoint.port;
-        }
-        {
-            auto user{accessPoint["user"]};
-            user = cfg.accessPoint.user;
-        }
-        {
-            auto password{accessPoint["password"]};
-            password = cfg.accessPoint.password;
-        }
-        {
-            auto duration{accessPoint["duration"]};
-            duration = cfg.accessPoint.duration;
-        }
+        accessPoint["port"] = cfg.accessPoint.port;
+        accessPoint["user"] = cfg.accessPoint.user;
+        accessPoint["password"] = cfg.accessPoint.password;
+        accessPoint["duration"] = cfg.accessPoint.duration;
     }
     {
-        auto station{doc["station"]};
+        auto station{json["station"]};
+
+        station["enabled"] = cfg.station.enabled;
+        for (auto n : cfg.station.mac)
         {
-            auto mac{station["mac"]};
-            for (auto i{0}; i < cfg.station.mac.size(); ++i)
-            {
-                mac.add(cfg.station.mac[i]);
-            }
+            station["mac"].add(n);
+        }
+        for (auto n : cfg.station.ip)
+        {
+            station["ip"].add(n);
+        }
+        for (auto n : cfg.station.netmask)
+        {
+            station["netmask"].add(n);
+        }
+        for (auto n : cfg.station.gateway)
+        {
+            station["gateway"].add(n);
+        }
+        station["port"] = cfg.station.port;
+        station["user"] = cfg.station.user;
+        station["password"] = cfg.station.password;
+    }
+    {
+        auto autoSleepWakeUp{json["auto_sleep_wakeup"]};
+
+        autoSleepWakeUp["enabled"] = cfg.autoSleepWakeUp.enabled;
+        {
+            auto sleep{autoSleepWakeUp["sleep"]};
+
+            sleep["hour"] = cfg.autoSleepWakeUp.sleep.hour;
+            sleep["minute"] = cfg.autoSleepWakeUp.sleep.minute;
+            sleep["second"] = cfg.autoSleepWakeUp.sleep.second;
         }
         {
-            auto ip{station["ip"]};
-            for (auto i{0}; i < cfg.station.ip.size(); ++i)
-            {
-                ip.add(cfg.station.ip[i]);
-            }
-        }
-        {
-            auto netmask{station["netmask"]};
-            for (auto i{0}; i < cfg.station.netmask.size(); ++i)
-            {
-                netmask.add(cfg.station.netmask[i]);
-            }
-        }
-        {
-            auto gateway{station["gateway"]};
-            for (auto i{0}; i < cfg.station.gateway.size(); ++i)
-            {
-                gateway.add(cfg.station.gateway[i]);
-            }
-        }
-        {
-            auto port{station["port"]};
-            port = cfg.station.port;
-        }
-        {
-            auto user{station["user"]};
-            user = cfg.station.user;
-        }
-        {
-            auto password{station["password"]};
-            password = cfg.station.password;
+            auto wakeUp{autoSleepWakeUp["wakeUp"]};
+
+            wakeUp["hour"] = cfg.autoSleepWakeUp.wakeUp.hour;
+            wakeUp["minute"] = cfg.autoSleepWakeUp.wakeUp.minute;
+            wakeUp["second"] = cfg.autoSleepWakeUp.wakeUp.second;
         }
     }
 }
 
-auto Configuration::deserialize(const ArduinoJson::JsonDocument &doc, Configuration &cfg) -> void
+auto Configuration::deserialize(const ArduinoJson::JsonVariant &json, Configuration &cfg) -> void
 {
     {
-        const auto accessPoint{doc["access_point"]};
+        const auto accessPoint{json["access_point"]};
+        {
+            const auto enabled{accessPoint["enabled"]};
+            if (not enabled.is<bool>())
+            {
+                cfg.accessPoint.enabled = defaultCfg.accessPoint.enabled;
+            }
+            else
+            {
+                cfg.accessPoint.enabled = enabled.as<bool>();
+            }
+        }
+        cfg.accessPoint.enabled = accessPoint["enabled"].as<bool>();
         {
             const auto mac{accessPoint["mac"]};
             if (not mac.is<ArduinoJson::JsonArray>() || mac.size() != cfg.accessPoint.mac.size())
@@ -249,7 +239,18 @@ auto Configuration::deserialize(const ArduinoJson::JsonDocument &doc, Configurat
         }
     }
     {
-        const auto station{doc["station"]};
+        const auto station{json["station"]};
+        {
+            const auto enabled{station["enabled"]};
+            if (not enabled.is<bool>())
+            {
+                cfg.station.enabled = defaultCfg.station.enabled;
+            }
+            else
+            {
+                cfg.station.enabled = enabled.as<bool>();
+            }
+        }
         {
             const auto mac{station["mac"]};
             if (not mac.is<ArduinoJson::JsonArray>() || mac.size() != cfg.station.mac.size())
@@ -340,9 +341,86 @@ auto Configuration::deserialize(const ArduinoJson::JsonDocument &doc, Configurat
             }
         }
     }
+    {
+        const auto autoSleepWakeUp{json["auto_sleep_wakeup"]};
+
+        cfg.autoSleepWakeUp.enabled = autoSleepWakeUp["enabled"].as<bool>();
+        {
+            const auto sleep{autoSleepWakeUp["sleep"]};
+            {
+                const auto hour{sleep["hour"]};
+                if (not hour.is<uint8_t>())
+                {
+                    cfg.autoSleepWakeUp.sleep.hour = defaultCfg.autoSleepWakeUp.sleep.hour;
+                }
+                else
+                {
+                    cfg.autoSleepWakeUp.sleep.hour = hour.as<uint8_t>();
+                }
+            }
+            {
+                const auto minute{sleep["minute"]};
+                if (not minute.is<uint8_t>())
+                {
+                    cfg.autoSleepWakeUp.sleep.minute = defaultCfg.autoSleepWakeUp.sleep.minute;
+                }
+                else
+                {
+                    cfg.autoSleepWakeUp.sleep.minute = minute.as<uint8_t>();
+                }
+            }
+            {
+                const auto second{sleep["second"]};
+                if (not second.is<uint8_t>())
+                {
+                    cfg.autoSleepWakeUp.sleep.second = defaultCfg.autoSleepWakeUp.sleep.second;
+                }
+                else
+                {
+                    cfg.autoSleepWakeUp.sleep.second = second.as<uint8_t>();
+                }
+            }
+        }
+        {
+            const auto wakeUp{autoSleepWakeUp["wakeUp"]};
+            {
+                const auto hour{wakeUp["hour"]};
+                if (not hour.is<uint8_t>())
+                {
+                    cfg.autoSleepWakeUp.wakeUp.hour = defaultCfg.autoSleepWakeUp.wakeUp.hour;
+                }
+                else
+                {
+                    cfg.autoSleepWakeUp.wakeUp.hour = hour.as<uint8_t>();
+                }
+            }
+            {
+                const auto minute{wakeUp["minute"]};
+                if (not minute.is<uint8_t>())
+                {
+                    cfg.autoSleepWakeUp.wakeUp.minute = defaultCfg.autoSleepWakeUp.wakeUp.minute;
+                }
+                else
+                {
+                    cfg.autoSleepWakeUp.wakeUp.minute = minute.as<uint8_t>();
+                }
+            }
+            {
+                const auto second{wakeUp["second"]};
+                if (not second.is<uint8_t>())
+                {
+                    cfg.autoSleepWakeUp.wakeUp.second = defaultCfg.autoSleepWakeUp.wakeUp.second;
+                }
+                else
+                {
+                    cfg.autoSleepWakeUp.wakeUp.second = second.as<uint8_t>();
+                }
+            }
+        }
+    }
 }
 
-auto Configuration::load() -> bool
+auto Configuration::load() -> void
 {
     log_d("begin");
 
@@ -375,17 +453,18 @@ auto Configuration::load() -> bool
             }
             else
             {
-                Configuration::deserialize(doc, *this);
+                auto json{doc.as<ArduinoJson::JsonVariant>()};
+                Configuration::deserialize(json, *this);
                 this->station.mac = stationMAC;
                 this->accessPoint.mac = accessPointMAC;
-
-                auto fileHash{doc["hash"].as<uint32_t>()};
-                auto calcHash{this->hash()};
-                if (fileHash != calcHash)
-                {
-                    log_d("hash mismatch");
-                    valid = false;
-                }
+                //
+                //auto fileHash{json["hash"].as<uint32_t>()};
+                //auto calcHash{this->hash()};
+                //if (fileHash != calcHash)
+                //{
+                //    log_d("hash mismatch");
+                //    valid = false;
+                //}
             }
         }
     }
@@ -393,18 +472,14 @@ auto Configuration::load() -> bool
     if (not valid)
     {
         *this = defaultCfg;
-        if (not this->save())
-        {
-            log_e("save error");
-            return false;
-        }
     }
 
+    this->save();
+
     log_d("end");
-    return true;
 }
 
-auto Configuration::save() -> bool
+auto Configuration::save() -> void
 {
     log_d("begin");
 
@@ -413,47 +488,57 @@ auto Configuration::save() -> bool
     if (not file)
     {
         log_e("file error");
-        return false;
+        std::abort();
     }
 
     auto doc{ArduinoJson::DynamicJsonDocument{2048}};
-
+    auto json{doc.as<ArduinoJson::JsonVariant>()};
     this->station.mac = stationMAC;
     this->accessPoint.mac = accessPointMAC;
-    Configuration::serialize(doc, *this);
-    doc["hash"] = this->hash();
+    
+    Configuration::serialize(json, *this);
+    //json["hash"] = this->hash();
 
     ArduinoJson::serializeJsonPretty(doc, file);
     file.close();
 
     log_d("end");
-    return true;
 }
 
-auto Configuration::hash() const -> uint32_t
-{
-    auto hasher{FastCRC32{}};
-
-    auto hash{hasher.crc32(nullptr, 0)};
-
-    hash = hasher.crc32_upd(this->station.mac.data(), this->station.mac.size());
-    hash = hasher.crc32_upd(this->station.ip.data(), this->station.ip.size());
-    hash = hasher.crc32_upd(this->station.netmask.data(), this->station.netmask.size());
-    hash = hasher.crc32_upd(this->station.gateway.data(), this->station.gateway.size());
-    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->station.port), sizeof(this->station.port));
-    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->station.user.data()), this->station.user.size());
-    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->station.password.data()), this->station.password.size());
-
-    hash = hasher.crc32_upd(this->accessPoint.mac.data(), this->accessPoint.mac.size());
-    hash = hasher.crc32_upd(this->accessPoint.ip.data(), this->accessPoint.ip.size());
-    hash = hasher.crc32_upd(this->accessPoint.netmask.data(), this->accessPoint.netmask.size());
-    hash = hasher.crc32_upd(this->accessPoint.gateway.data(), this->accessPoint.gateway.size());
-    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->accessPoint.port), sizeof(this->accessPoint.port));
-    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->accessPoint.user.data()), this->accessPoint.user.size());
-    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->accessPoint.password.data()), this->accessPoint.password.size());
-    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->accessPoint.duration), sizeof(this->accessPoint.duration));
-
-    return hash;
-}
+//auto Configuration::hash() const -> uint32_t
+//{
+//    auto hasher{FastCRC32{}};
+//
+//    auto hash{hasher.crc32(nullptr, 0)};
+//
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->station.enabled), sizeof(this->station.enabled));
+//    hash = hasher.crc32_upd(this->station.mac.data(), this->station.mac.size());
+//    hash = hasher.crc32_upd(this->station.ip.data(), this->station.ip.size());
+//    hash = hasher.crc32_upd(this->station.netmask.data(), this->station.netmask.size());
+//    hash = hasher.crc32_upd(this->station.gateway.data(), this->station.gateway.size());
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->station.port), sizeof(this->station.port));
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->station.user.data()), this->station.user.size());
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->station.password.data()), this->station.password.size());
+//
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->accessPoint.enabled), sizeof(this->accessPoint.enabled));
+//    hash = hasher.crc32_upd(this->accessPoint.mac.data(), this->accessPoint.mac.size());
+//    hash = hasher.crc32_upd(this->accessPoint.ip.data(), this->accessPoint.ip.size());
+//    hash = hasher.crc32_upd(this->accessPoint.netmask.data(), this->accessPoint.netmask.size());
+//    hash = hasher.crc32_upd(this->accessPoint.gateway.data(), this->accessPoint.gateway.size());
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->accessPoint.port), sizeof(this->accessPoint.port));
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->accessPoint.user.data()), this->accessPoint.user.size());
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->accessPoint.password.data()), this->accessPoint.password.size());
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->accessPoint.duration), sizeof(this->accessPoint.duration));
+//
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.enabled), sizeof(this->autoSleepWakeUp.enabled));
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.sleep.hour), sizeof(this->autoSleepWakeUp.sleep.hour));
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.sleep.minute), sizeof(this->autoSleepWakeUp.sleep.minute));
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.sleep.second), sizeof(this->autoSleepWakeUp.sleep.second));
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.wakeUp.hour), sizeof(this->autoSleepWakeUp.wakeUp.hour));
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.wakeUp.minute), sizeof(this->autoSleepWakeUp.wakeUp.minute));
+//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.wakeUp.second), sizeof(this->autoSleepWakeUp.wakeUp.second));
+//
+//    return hash;
+//}
 
 Configuration cfg{};

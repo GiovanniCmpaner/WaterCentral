@@ -9,6 +9,7 @@ struct Configuration
 {
     struct Station
     {
+        bool enabled;
         std::array<uint8_t, 6> mac;
         std::array<uint8_t, 4> ip;
         std::array<uint8_t, 4> netmask;
@@ -20,6 +21,7 @@ struct Configuration
 
     struct AccessPoint
     {
+        bool enabled;
         std::array<uint8_t, 6> mac;
         std::array<uint8_t, 4> ip;
         std::array<uint8_t, 4> netmask;
@@ -30,13 +32,24 @@ struct Configuration
         uint16_t duration;
     } accessPoint;
 
-    static auto init() -> bool;
-    auto load() -> bool;
-    auto save() -> bool;
+    struct AutoSleepWakeUp
+    {
+        bool enabled;
+        struct
+        {
+            uint8_t hour;
+            uint8_t minute;
+            uint8_t second;
+        } sleep, wakeUp;
+    } autoSleepWakeUp;
+
+    static auto init() -> void;
+    auto load() -> void;
+    auto save() -> void;
     auto hash() const -> uint32_t;
 
-    static auto serialize(ArduinoJson::JsonDocument &doc, const Configuration &cfg) -> void;
-    static auto deserialize(const ArduinoJson::JsonDocument &doc, Configuration &cfg) -> void;
+    static auto serialize(ArduinoJson::JsonVariant &json, const Configuration &cfg) -> void;
+    static auto deserialize(const ArduinoJson::JsonVariant &json, Configuration &cfg) -> void;
 };
 
 extern Configuration cfg;

@@ -4,6 +4,5 @@
 
 namespace WebInterface
 {
-    auto init() -> bool;
-    auto process() -> void;
+    auto init() -> void;
 } // namespace WebInterface
