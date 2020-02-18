@@ -43,6 +43,13 @@
         "typeinfo": "cpp",
         "bitset": "cpp",
         "regex": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "thread": "cpp",
+        "future": "cpp",
+        "mutex": "cpp",
+        "chrono": "cpp",
+        "atomic": "cpp",
+        "condition_variable": "cpp",
+        "ratio": "cpp"
     }
 }

@@ -13,6 +13,7 @@
 #include "Database.hpp"
 #include "Peripherals.hpp"
 #include "WebInterface.hpp"
+#include "RealTime.hpp"
 
 namespace WebInterface
 {
@@ -21,22 +22,44 @@ namespace WebInterface
     static auto getConfiguration(AsyncWebServerRequest *request) -> void
     {
         auto response{new AsyncJsonResponse{}};
-        auto json{response->getRoot()};
+        auto responseJson{response->getRoot()};
 
-        Configuration::serialize(json, cfg);
+        Configuration::serialize(responseJson, cfg);
 
         response->setLength();
         request->send(response);
     }
 
-    static auto setConfiguration(AsyncWebServerRequest *request) -> void
+    static auto setConfiguration(AsyncWebServerRequest *request, JsonVariant &requestJson) -> void
     {
+    }
+
+    static auto getDateTime(AsyncWebServerRequest *request) -> void
+    {
+        auto response{new AsyncJsonResponse{}};
+        auto responseJson{response->getRoot()};
+
+        const auto str{RealTime::dateTimeToString(RealTime::now())};
+        responseJson["date_time"] = str;
+
+        response->setLength();
+        request->send(response);
+    }
+
+    static auto setDateTime(AsyncWebServerRequest *request, JsonVariant &requestJson) -> void
+    {
+        auto requestObj{ requestJson.as<JsonObject>() };
+
+        const auto dateTime{RealTime::stringToDateTime(requestObj["date_time"])};
+        RealTime::adjust(dateTime);
+
+        request->send(204);
     }
 
     static auto getSensorsData(AsyncWebServerRequest *request) -> void
     {
         auto response{new AsyncJsonResponse{}};
-        auto json{response->getRoot()};
+        auto responseJson{response->getRoot()};
 
         auto id{int64_t{}};
     	auto start{RtcDateTime{}};
@@ -60,8 +83,9 @@ namespace WebInterface
         log_d("end = %04u-%02u-%02u %02u:%02u:%02u", end.Year(), end.Month(), end.Day(), end.Hour(), end.Minute(), end.Second());
 
         Database::getSensorsData([&](const SensorData& sensorData){
-            auto element{json.addElement()};
+            auto element{ArduinoJson::JsonVariant{}};
             SensorData::serialize(element,sensorData);
+            responseJson.add(element);
         },id);
 
         response->setLength();
@@ -84,8 +108,13 @@ namespace WebInterface
         if (server)
         {
             server->on("/configuration", HTTP_GET, getConfiguration);
-            server->on("/configuration", HTTP_POST, setConfiguration);
+            server->addHandler(new AsyncCallbackJsonWebHandler("/configuration",setConfiguration));
+
+            server->on("/date_time", HTTP_GET, getDateTime);
+            server->addHandler(new AsyncCallbackJsonWebHandler("/date_time",setDateTime));
+            
             server->on("/sensors_data", HTTP_GET, getSensorsData);
+
             server->begin();
         }
 

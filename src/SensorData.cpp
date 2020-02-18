@@ -1,8 +1,6 @@
 #include <Arduino.h>
 
 #include <ArduinoJson.hpp>
-#include <iomanip>
-#include <sstream>
 #include <BME280.h>
 #include <ResponsiveAnalogRead.h>
 
@@ -11,26 +9,11 @@
 #include "RealTime.hpp"
 #include "SensorData.hpp"
 
-static auto formatDateTime(const RtcDateTime &dateTime) -> std::string
-{
-    auto stream{std::ostringstream{}};
-
-    stream << std::setfill('0') << std::setw(2) << dateTime.Year() << "-";
-    stream << std::setfill('0') << std::setw(2) << dateTime.Month() << "-";
-    stream << std::setfill('0') << std::setw(2) << dateTime.Day();
-
-    stream << std::setfill('0') << std::setw(2) << dateTime.Hour() << ":";
-    stream << std::setfill('0') << std::setw(2) << dateTime.Minute() << ":";
-    stream << std::setfill('0') << std::setw(2) << dateTime.Second();
-
-    return stream.str();
-}
-
 auto SensorData::serialize(ArduinoJson::JsonVariant &json, const SensorData &sensorData) -> void
 {
     json["id"] = sensorData.id;
-    json["dateTime"] = formatDateTime(sensorData.dateTime);
-    json["temperatura"] = sensorData.temperature;
+    json["dateTime"] = RealTime::dateTimeToString(sensorData.dateTime);
+    json["temperature"] = sensorData.temperature;
     json["humidity"] = sensorData.humidity;
     json["pressure"] = sensorData.pressure;
     for (auto n : sensorData.sensors)
