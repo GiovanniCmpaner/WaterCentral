@@ -44,9 +44,8 @@ struct Configuration
     } autoSleepWakeUp;
 
     static auto init() -> void;
-    auto load() -> void;
-    auto save() -> void;
-    auto hash() const -> uint32_t;
+    static auto load(Configuration* cfg) -> void;
+    static auto save(const Configuration& cfg) -> void;
 
     static auto serialize(ArduinoJson::JsonVariant &json, const Configuration &cfg) -> void;
     static auto deserialize(const ArduinoJson::JsonVariant &json, Configuration &cfg) -> void;

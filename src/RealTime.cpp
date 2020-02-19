@@ -1,33 +1,34 @@
 #include <Arduino.h>
 
-#include <FreeRTOS.h>
 #include <RtcDS3231.h>
 #include <Wire.h>
-#include <cstdlib>
 #include <driver/rtc_io.h>
 #include <esp_log.h>
 #include <esp_sleep.h>
-#include <freertos/task.h>
+
+#include <cstdint>
+#include <cstdlib>
 #include <functional>
+#include <future>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <thread>
 
 #include "Configuration.hpp"
 #include "Database.hpp"
 #include "Peripherals.hpp"
 #include "RealTime.hpp"
+#include <chrono>
+#include <sys/time.h>
 
 namespace RealTime
 {
     static auto rtc(RtcDS3231<TwoWire>{Wire});
-    static auto taskHandle{TaskHandle_t{}};
-    static auto mutexHandle{SemaphoreHandle_t{}};
+    static auto future{std::future<void>{}};
 
     static auto checkDateTime() -> void
     {
-        const auto compiled{RtcDateTime(__DATE__, __TIME__)};
-
         if (not rtc.IsDateTimeValid() && rtc.LastError() != I2C_ERROR_OK)
         {
             log_e("rtc error: %d", rtc.LastError());
@@ -40,8 +41,10 @@ namespace RealTime
             rtc.SetIsRunning(true);
         }
 
-        const auto now{rtc.GetDateTime()};
-        log_d("now = %04u-%02u-%02u %02u:%02u:%02u", now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second());
+        const auto time{timeval{static_cast<std::time_t>(rtc.GetDateTime().Epoch32Time())}};
+        settimeofday(&time, nullptr);
+
+        log_d("now = %s", RealTime::dateTimeToString(std::chrono::system_clock::now()).data());
     }
 
     static auto configureAlarms() -> void
@@ -89,8 +92,9 @@ namespace RealTime
         esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(Peripherals::DS3231::SQW_INT), LOW);
     }
 
-    static auto process(void *) -> void
+    static auto process() -> void
     {
+        auto timePoint{std::chrono::system_clock::now()};
         while (1)
         {
             if (cfg.autoSleepWakeUp.enabled)
@@ -98,10 +102,11 @@ namespace RealTime
                 const auto flags{rtc.LatchAlarmsTriggeredFlags()};
                 if (flags & DS3231AlarmFlag_Alarm2)
                 {
-                    //esp_deep_sleep_start();
+                    esp_deep_sleep_start();
                 }
             }
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            timePoint += std::chrono::seconds(1);
+            std::this_thread::sleep_until(timePoint);
         }
     }
 
@@ -114,62 +119,32 @@ namespace RealTime
         configureAlarms();
 
         log_d("end");
-        mutexHandle = xSemaphoreCreateMutex();
-        xTaskCreatePinnedToCore(process, "RealTime::process", 2048, nullptr, 0, &taskHandle, 0);
+        future = std::async(std::launch::async, process);
     }
 
-    auto now() -> RtcDateTime
+    auto adjust(const std::chrono::system_clock::time_point &timePoint) -> void
     {
-        auto now{RtcDateTime{}};
-        xSemaphoreTake(mutexHandle, portMAX_DELAY);
-        now = rtc.GetDateTime();
-        xSemaphoreGive(mutexHandle);
-        return now;
+        const auto time{timeval{std::chrono::system_clock::to_time_t(timePoint)}};
+        settimeofday(&time, nullptr);
+
+        auto rtcDateTime{RtcDateTime{}};
+        rtcDateTime.InitWithEpoch32Time(time.tv_sec);
+        rtc.SetDateTime(rtcDateTime);
     }
 
-    auto adjust(const RtcDateTime &dateTime) -> void
-    {
-        rtc.SetDateTime(dateTime);
-    }
-
-    auto stringToDateTime(const std::string &str) -> RtcDateTime
+    auto stringToDateTime(const std::string &str) -> std::chrono::system_clock::time_point
     {
         auto stream{std::istringstream{str}};
-
-        auto year{uint32_t{}};
-        auto month{uint32_t{}};
-        auto day{uint32_t{}};
-        auto hour{uint32_t{}};
-        auto minute{uint32_t{}};
-        auto second{uint32_t{}};
-
-        auto delimiter{char{}};
-        stream >> year >> delimiter;
-        stream >> month >> delimiter;
-        stream >> day;
-        stream >> hour >> delimiter;
-        stream >> minute >> delimiter;
-        stream >> second;
-
-        return RtcDateTime{static_cast<uint16_t>(year),
-                           static_cast<uint8_t>(month),
-                           static_cast<uint8_t>(day),
-                           static_cast<uint8_t>(hour),
-                           static_cast<uint8_t>(minute),
-                           static_cast<uint8_t>(second)};
+        auto time{std::tm{}};
+        stream >> std::get_time(&time, "%Y-%m-%d %H:%M:%S");
+        return std::chrono::system_clock::from_time_t(std::mktime(&time));
     }
 
-    auto dateTimeToString(const RtcDateTime &dateTime) -> std::string
+    auto dateTimeToString(const std::chrono::system_clock::time_point &timePoint) -> std::string
     {
         auto stream{std::ostringstream{}};
-
-        stream << std::setfill('0') << std::setw(4) << static_cast<uint32_t>(dateTime.Year()) << '-';
-        stream << std::setfill('0') << std::setw(2) << static_cast<uint32_t>(dateTime.Month()) << '-';
-        stream << std::setfill('0') << std::setw(2) << static_cast<uint32_t>(dateTime.Day()) << ' ';
-        stream << std::setfill('0') << std::setw(2) << static_cast<uint32_t>(dateTime.Hour()) << ':';
-        stream << std::setfill('0') << std::setw(2) << static_cast<uint32_t>(dateTime.Minute()) << ':';
-        stream << std::setfill('0') << std::setw(2) << static_cast<uint32_t>(dateTime.Second());
-
+        auto time{std::chrono::system_clock::to_time_t(timePoint)};
+        stream << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
         return stream.str();
     }
 } // namespace RealTime

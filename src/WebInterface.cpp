@@ -5,6 +5,7 @@
 #include <FS.h>
 #include <SPIFFS.h>
 #include <WiFi.h>
+#include <chrono>
 #include <cstdlib>
 #include <esp_log.h>
 #include <memory>
@@ -12,8 +13,8 @@
 #include "Configuration.hpp"
 #include "Database.hpp"
 #include "Peripherals.hpp"
-#include "WebInterface.hpp"
 #include "RealTime.hpp"
+#include "WebInterface.hpp"
 
 namespace WebInterface
 {
@@ -21,7 +22,7 @@ namespace WebInterface
 
     static auto getConfiguration(AsyncWebServerRequest *request) -> void
     {
-        auto response{new AsyncJsonResponse{}};
+        auto response{new AsyncJsonResponse{false, 2048}};
         auto responseJson{response->getRoot()};
 
         Configuration::serialize(responseJson, cfg);
@@ -32,6 +33,12 @@ namespace WebInterface
 
     static auto setConfiguration(AsyncWebServerRequest *request, JsonVariant &requestJson) -> void
     {
+        auto requestObj{requestJson.as<JsonObject>()};
+
+        Configuration::deserialize(requestObj, cfg);
+        Configuration::save(cfg);
+
+        request->send(204);
     }
 
     static auto getDateTime(AsyncWebServerRequest *request) -> void
@@ -39,7 +46,7 @@ namespace WebInterface
         auto response{new AsyncJsonResponse{}};
         auto responseJson{response->getRoot()};
 
-        const auto str{RealTime::dateTimeToString(RealTime::now())};
+        const auto str{RealTime::dateTimeToString(std::chrono::system_clock::now())};
         responseJson["date_time"] = str;
 
         response->setLength();
@@ -48,7 +55,7 @@ namespace WebInterface
 
     static auto setDateTime(AsyncWebServerRequest *request, JsonVariant &requestJson) -> void
     {
-        auto requestObj{ requestJson.as<JsonObject>() };
+        auto requestObj{requestJson.as<JsonObject>()};
 
         const auto dateTime{RealTime::stringToDateTime(requestObj["date_time"])};
         RealTime::adjust(dateTime);
@@ -58,35 +65,35 @@ namespace WebInterface
 
     static auto getSensorsData(AsyncWebServerRequest *request) -> void
     {
-        auto response{new AsyncJsonResponse{}};
+        auto response{new AsyncJsonResponse{true, 4096}};
         auto responseJson{response->getRoot()};
 
         auto id{int64_t{}};
-    	auto start{RtcDateTime{}};
-        auto end{RtcDateTime{}};
+        auto start{std::chrono::system_clock::time_point::min()};
+        auto end{std::chrono::system_clock::time_point::max()};
 
-        if(request->hasParam("id"))
+        if (request->hasParam("id"))
         {
             id = request->getParam("id")->value().toInt();
         }
-        if(request->hasParam("start"))
+        if (request->hasParam("start"))
         {
-            //start = request->getParam("start")->value();
+            start = RealTime::stringToDateTime(request->getParam("start")->value().c_str());
         }
-        if(request->hasParam("end"))
+        if (request->hasParam("end"))
         {
-            //end = request->getParam("end")->value();
+            end = RealTime::stringToDateTime(request->getParam("end")->value().c_str());
         }
 
-        log_d("id = %ld",id);
-        log_d("start = %04u-%02u-%02u %02u:%02u:%02u", start.Year(), start.Month(), start.Day(), start.Hour(), start.Minute(), start.Second());
-        log_d("end = %04u-%02u-%02u %02u:%02u:%02u", end.Year(), end.Month(), end.Day(), end.Hour(), end.Minute(), end.Second());
+        log_d("id = %ld", id);
+        log_d("start = %s", RealTime::dateTimeToString(start).data());
+        log_d("end = %s", RealTime::dateTimeToString(end).data());
 
-        Database::getSensorsData([&](const SensorData& sensorData){
-            auto element{ArduinoJson::JsonVariant{}};
-            SensorData::serialize(element,sensorData);
-            responseJson.add(element);
-        },id);
+        Database::getSensorsData([&](const SensorData &sensorData) -> bool {
+            auto element{responseJson.addElement()};
+            SensorData::serialize(element, sensorData);
+            return true;
+        },id,start,end);
 
         response->setLength();
         request->send(response);
@@ -108,17 +115,15 @@ namespace WebInterface
         if (server)
         {
             server->on("/configuration", HTTP_GET, getConfiguration);
-            server->addHandler(new AsyncCallbackJsonWebHandler("/configuration",setConfiguration));
+            server->addHandler(new AsyncCallbackJsonWebHandler("/configuration", setConfiguration));
 
             server->on("/date_time", HTTP_GET, getDateTime);
-            server->addHandler(new AsyncCallbackJsonWebHandler("/date_time",setDateTime));
-            
+            server->addHandler(new AsyncCallbackJsonWebHandler("/date_time", setDateTime));
+
             server->on("/sensors_data", HTTP_GET, getSensorsData);
 
             server->begin();
         }
-
-        
     }
 
     static auto configureStation() -> void

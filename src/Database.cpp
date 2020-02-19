@@ -17,8 +17,6 @@
 namespace Database
 {
     static auto db{(sqlite3 *){}};
-    static auto taskHandle{TaskHandle_t{}};
-    static auto future{RtcDateTime{}};
 
     static auto createTable() -> void
     {
@@ -85,7 +83,7 @@ namespace Database
             //std::abort();
         }
         else {
-            sqlite3_bind_int64(res, 1, sensorData.dateTime.Epoch32Time());
+            sqlite3_bind_int64(res, 1, sensorData.dateTime);
             sqlite3_bind_double(res, 2, sensorData.temperature);
             sqlite3_bind_double(res, 3, sensorData.humidity);
             sqlite3_bind_double(res, 4, sensorData.pressure);
@@ -106,47 +104,47 @@ namespace Database
         return id;
     }
 
-    static auto scheduleInsert() -> void
-    {
-        log_d("begin");
-
-        const auto now{RealTime::now()};
-        if (now.IsValid())
-        {
-            future = RtcDateTime{((now + 59) / 60) * 60};
-        }
-        else
-        {
-            future = RtcDateTime{};
-        }
-
-        log_d("end");
-    }
-
-    static auto process(void *) -> void
-    {
-        vTaskDelay(pdMS_TO_TICKS(10000));
-
-        const auto interval{pdMS_TO_TICKS(60000)};
-        auto lastWakeTime{xTaskGetTickCount()};
-        while (1)
-        {
-            if (future.IsValid())
-            {
-                const auto now{RealTime::now()};
-                if (now >= future)
-                {
-                    insertSensorData(SensorData::get());
-                    scheduleInsert();
-                }
-            }
-            else
-            {
-                scheduleInsert();
-            }
-            vTaskDelayUntil(&lastWakeTime, interval);
-        }
-    }
+    //static auto scheduleInsert() -> void
+    //{
+    //    log_d("begin");
+//
+    //    const auto now{RealTime::now()};
+    //    if (now.IsValid())
+    //    {
+    //        future = RtcDateTime{((now + 59) / 60) * 60};
+    //    }
+    //    else
+    //    {
+    //        future = RtcDateTime{};
+    //    }
+//
+    //    log_d("end");
+    //}
+//
+    //static auto process(void *) -> void
+    //{
+    //    vTaskDelay(pdMS_TO_TICKS(10000));
+//
+    //    const auto interval{pdMS_TO_TICKS(60000)};
+    //    auto lastWakeTime{xTaskGetTickCount()};
+    //    while (1)
+    //    {
+    //        if (future.IsValid())
+    //        {
+    //            const auto now{RealTime::now()};
+    //            if (now >= future)
+    //            {
+    //                insertSensorData(SensorData::get());
+    //                scheduleInsert();
+    //            }
+    //        }
+    //        else
+    //        {
+    //            scheduleInsert();
+    //        }
+    //        vTaskDelayUntil(&lastWakeTime, interval);
+    //    }
+    //}
 
     auto init() -> void
     {
@@ -164,32 +162,36 @@ namespace Database
         createTable();
 
         log_d("end");
-        xTaskCreatePinnedToCore(process, "Database::process", 4096, nullptr, 0, &taskHandle, 0);
+        //xTaskCreatePinnedToCore(process, "Database::process", 4096, nullptr, 0, &taskHandle, 0);
     }
 
-    auto getSensorsData(std::function<void(const SensorData &)> callback, int64_t id, RtcDateTime start, RtcDateTime end) -> uint32_t
+    auto getSensorsData(
+        std::function<bool(const SensorData&)> callback, 
+        int64_t id, 
+        std::chrono::system_clock::time_point start, 
+        std::chrono::system_clock::time_point end
+    ) -> void
     {
         log_d("begin");
 
-        auto recordCount{uint32_t{}};
-
         const auto query{
-            "SELECT                                   "
-            "    ID,                                  "
-            "    DATE_TIME,                           "
-            "    TEMPERATURE,                         "
-            "    HUMIDITY,                            "
-            "    PRESSURE,                            "
-            "    SENSOR_1,                            "
-            "    SENSOR_2,                            "
-            "    SENSOR_3,                            "
-            "    SENSOR_4                             "
-            "FROM                                     "
-            "    SENSORS_DATA                         "};
-            //"WHERE                                    "
-            //"    ( ID >= IFNULL(?,ID) )               "
-            //"AND ( DATE_TIME >= IFNULL(?,DATE_TIME) ) "
-            //"AND ( DATE_TIME <= IFNULL(?,DATE_TIME) ) "};
+            "SELECT                                       "
+            "    ID,                                      "
+            "    DATE_TIME,                               "
+            "    TEMPERATURE,                             "
+            "    HUMIDITY,                                "
+            "    PRESSURE,                                "
+            "    SENSOR_1,                                "
+            "    SENSOR_2,                                "
+            "    SENSOR_3,                                "
+            "    SENSOR_4                                 "
+            "FROM                                         "
+            "    SENSORS_DATA                             "
+            "WHERE                                        "
+            "        ( ID >= IFNULL(?,ID) )               "
+            "    AND ( DATE_TIME >= IFNULL(?,DATE_TIME) ) "
+            "    AND ( DATE_TIME <= IFNULL(?,DATE_TIME) ) "
+            "LIMIT 20                                     "};
 
         auto res{(sqlite3_stmt *){}};
         const auto rc{sqlite3_prepare_v2(db, query, strlen(query), &res, nullptr)};
@@ -199,24 +201,24 @@ namespace Database
             std::abort();
         }
 
-        if (id != 0)
+        if (id != int64_t{})
         {
             sqlite3_bind_int64(res, 1, id);
         }
-        if (start.IsValid())
+        if (start != std::chrono::system_clock::time_point::min())
         {
-            sqlite3_bind_int64(res, 2, start.Epoch32Time());
+            sqlite3_bind_int64(res, 2, std::chrono::system_clock::to_time_t(start));
         }
-        if (end.IsValid())
+        if (end != std::chrono::system_clock::time_point::max())
         {
-            sqlite3_bind_int64(res, 3, end.Epoch32Time());
+            sqlite3_bind_int64(res, 3, std::chrono::system_clock::to_time_t(end));
         }
 
         while (sqlite3_step(res) == SQLITE_ROW)
         {
             auto sensorData{SensorData{}};
             sensorData.id = sqlite3_column_int64(res, 0);
-            sensorData.dateTime.InitWithEpoch32Time(sqlite3_column_int64(res, 1));
+            sensorData.dateTime = sqlite3_column_int64(res, 1);
             sensorData.temperature = sqlite3_column_int64(res, 2);
             sensorData.humidity = sqlite3_column_double(res, 3);
             sensorData.pressure = sqlite3_column_double(res, 4);
@@ -224,13 +226,13 @@ namespace Database
             sensorData.sensors[1] = sqlite3_column_double(res, 6);
             sensorData.sensors[2] = sqlite3_column_double(res, 7);
             sensorData.sensors[3] = sqlite3_column_double(res, 8);
-            callback(sensorData);
-            ++recordCount;
+            if(not callback(sensorData))
+            {
+                break;
+            }
         }
         sqlite3_finalize(res);
 
-        log_d("recordCount = %u",recordCount);
         log_d("end");
-        return recordCount;
     }
 } // namespace Database

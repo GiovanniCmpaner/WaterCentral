@@ -12,7 +12,7 @@
 #include "Configuration.hpp"
 #include "Peripherals.hpp"
 
-static const Configuration defaultCfg{
+static const auto defaultCfg{Configuration{
     {true,
      {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED},
      {192, 168, 1, 200},
@@ -32,7 +32,7 @@ static const Configuration defaultCfg{
      30},
     {true,
      {22, 0, 0},
-     {8, 0, 0}}};
+     {8, 0, 0}}}};
 
 static auto stationMAC{std::array<uint8_t, 6>{}};
 static auto accessPointMAC{std::array<uint8_t, 6>{}};
@@ -55,7 +55,7 @@ auto Configuration::serialize(ArduinoJson::JsonVariant &json, const Configuratio
         auto accessPoint{json["access_point"]};
 
         accessPoint["enabled"] = cfg.accessPoint.enabled;
-        for (auto n : cfg.accessPoint.mac)
+        for (auto n : accessPointMAC)
         {
             accessPoint["mac"].add(n);
         }
@@ -80,7 +80,7 @@ auto Configuration::serialize(ArduinoJson::JsonVariant &json, const Configuratio
         auto station{json["station"]};
 
         station["enabled"] = cfg.station.enabled;
-        for (auto n : cfg.station.mac)
+        for (auto n : stationMAC)
         {
             station["mac"].add(n);
         }
@@ -138,18 +138,7 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant &json, Configurat
         }
         cfg.accessPoint.enabled = accessPoint["enabled"].as<bool>();
         {
-            const auto mac{accessPoint["mac"]};
-            if (not mac.is<ArduinoJson::JsonArray>() || mac.size() != cfg.accessPoint.mac.size())
-            {
-                cfg.accessPoint.mac = defaultCfg.accessPoint.mac;
-            }
-            else
-            {
-                for (auto i{0}; i < cfg.accessPoint.mac.size(); ++i)
-                {
-                    cfg.accessPoint.mac[i] = mac[i].as<uint8_t>();
-                }
-            }
+            cfg.accessPoint.mac = accessPointMAC;
         }
         {
             const auto ip{accessPoint["ip"]};
@@ -252,18 +241,7 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant &json, Configurat
             }
         }
         {
-            const auto mac{station["mac"]};
-            if (not mac.is<ArduinoJson::JsonArray>() || mac.size() != cfg.station.mac.size())
-            {
-                cfg.station.mac = defaultCfg.station.mac;
-            }
-            else
-            {
-                for (auto i{0}; i < cfg.station.mac.size(); ++i)
-                {
-                    cfg.station.mac[i] = mac[i].as<uint8_t>();
-                }
-            }
+            cfg.station.mac = stationMAC;
         }
         {
             const auto ip{station["ip"]};
@@ -420,7 +398,7 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant &json, Configurat
     }
 }
 
-auto Configuration::load() -> void
+auto Configuration::load(Configuration *cfg) -> void
 {
     log_d("begin");
 
@@ -454,12 +432,10 @@ auto Configuration::load() -> void
             else
             {
                 auto json{doc.as<ArduinoJson::JsonVariant>()};
-                Configuration::deserialize(json, *this);
-                this->station.mac = stationMAC;
-                this->accessPoint.mac = accessPointMAC;
+                Configuration::deserialize(json, *cfg);
                 //
                 //auto fileHash{json["hash"].as<uint32_t>()};
-                //auto calcHash{this->hash()};
+                //auto calcHash{cfg->hash()};
                 //if (fileHash != calcHash)
                 //{
                 //    log_d("hash mismatch");
@@ -471,15 +447,15 @@ auto Configuration::load() -> void
 
     if (not valid)
     {
-        *this = defaultCfg;
+        *cfg = defaultCfg;
     }
 
-    this->save();
+    Configuration::save(*cfg);
 
     log_d("end");
 }
 
-auto Configuration::save() -> void
+auto Configuration::save(const Configuration &cfg) -> void
 {
     log_d("begin");
 
@@ -493,11 +469,9 @@ auto Configuration::save() -> void
 
     auto doc{ArduinoJson::DynamicJsonDocument{2048}};
     auto json{doc.as<ArduinoJson::JsonVariant>()};
-    this->station.mac = stationMAC;
-    this->accessPoint.mac = accessPointMAC;
-    
-    Configuration::serialize(json, *this);
-    //json["hash"] = this->hash();
+
+    Configuration::serialize(json, cfg);
+    //json["hash"] = cfg.hash();
 
     ArduinoJson::serializeJsonPretty(doc, file);
     file.close();

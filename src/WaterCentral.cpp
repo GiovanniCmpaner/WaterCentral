@@ -17,9 +17,9 @@ void setup()
     log_d("begin");
 
     Peripherals::init();
+    
     Configuration::init();
-
-    cfg.load();
+    Configuration::load(&cfg);
 
     RealTime::init();
     Database::init();

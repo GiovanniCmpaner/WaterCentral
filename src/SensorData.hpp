@@ -3,11 +3,13 @@
 #include <Arduino.h>
 #include <ArduinoJson.hpp>
 #include <RtcDateTime.h>
+#include <cstdint>
+#include <ctime>
 
 struct SensorData
 {
-    int64_t id;
-    RtcDateTime dateTime;
+    std::int64_t id;
+    std::time_t dateTime;
     double temperature;
     double humidity;
     double pressure;

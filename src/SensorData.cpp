@@ -12,7 +12,7 @@
 auto SensorData::serialize(ArduinoJson::JsonVariant &json, const SensorData &sensorData) -> void
 {
     json["id"] = sensorData.id;
-    json["dateTime"] = RealTime::dateTimeToString(sensorData.dateTime);
+    json["dateTime"] = RealTime::dateTimeToString(std::chrono::system_clock::from_time_t(sensorData.dateTime));
     json["temperature"] = sensorData.temperature;
     json["humidity"] = sensorData.humidity;
     json["pressure"] = sensorData.pressure;
@@ -25,7 +25,7 @@ auto SensorData::serialize(ArduinoJson::JsonVariant &json, const SensorData &sen
 auto SensorData::get() -> SensorData
 {
     auto sensorData{SensorData{}};
-    sensorData.dateTime = RealTime::now();
+    sensorData.dateTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     sensorData.temperature = 1.234;
     sensorData.humidity = 1.234;
     sensorData.pressure = 1.234;
