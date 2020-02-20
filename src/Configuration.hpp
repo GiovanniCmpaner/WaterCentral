@@ -35,12 +35,8 @@ struct Configuration
     struct AutoSleepWakeUp
     {
         bool enabled;
-        struct
-        {
-            uint8_t hour;
-            uint8_t minute;
-            uint8_t second;
-        } sleep, wakeUp;
+        std::array<uint8_t, 2> sleepTime;
+        std::array<uint8_t, 2> wakeUpTime;
     } autoSleepWakeUp;
 
     static auto init() -> void;

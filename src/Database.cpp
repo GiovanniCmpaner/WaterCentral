@@ -166,7 +166,7 @@ namespace Database
     }
 
     auto getSensorsData(
-        std::function<bool(const SensorData&)> callback, 
+        std::function<void(const SensorData&)> callback, 
         int64_t id, 
         std::chrono::system_clock::time_point start, 
         std::chrono::system_clock::time_point end
@@ -226,10 +226,7 @@ namespace Database
             sensorData.sensors[1] = sqlite3_column_double(res, 6);
             sensorData.sensors[2] = sqlite3_column_double(res, 7);
             sensorData.sensors[3] = sqlite3_column_double(res, 8);
-            if(not callback(sensorData))
-            {
-                break;
-            }
+            callback(sensorData);
         }
         sqlite3_finalize(res);
 

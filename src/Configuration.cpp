@@ -31,8 +31,8 @@ static const auto defaultCfg{Configuration{
      "W@t3rC3ntr4l",
      30},
     {true,
-     {22, 0, 0},
-     {8, 0, 0}}}};
+     {22, 0},
+     {8, 0}}}};
 
 static auto stationMAC{std::array<uint8_t, 6>{}};
 static auto accessPointMAC{std::array<uint8_t, 6>{}};
@@ -104,19 +104,13 @@ auto Configuration::serialize(ArduinoJson::JsonVariant &json, const Configuratio
         auto autoSleepWakeUp{json["auto_sleep_wakeup"]};
 
         autoSleepWakeUp["enabled"] = cfg.autoSleepWakeUp.enabled;
+        for (auto n : cfg.autoSleepWakeUp.sleepTime)
         {
-            auto sleep{autoSleepWakeUp["sleep"]};
-
-            sleep["hour"] = cfg.autoSleepWakeUp.sleep.hour;
-            sleep["minute"] = cfg.autoSleepWakeUp.sleep.minute;
-            sleep["second"] = cfg.autoSleepWakeUp.sleep.second;
+            autoSleepWakeUp["sleep_time"].add(n);
         }
+        for (auto n : cfg.autoSleepWakeUp.wakeUpTime)
         {
-            auto wakeUp{autoSleepWakeUp["wakeUp"]};
-
-            wakeUp["hour"] = cfg.autoSleepWakeUp.wakeUp.hour;
-            wakeUp["minute"] = cfg.autoSleepWakeUp.wakeUp.minute;
-            wakeUp["second"] = cfg.autoSleepWakeUp.wakeUp.second;
+            autoSleepWakeUp["wakeup_time"].add(n);
         }
     }
 }
@@ -324,74 +318,30 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant &json, Configurat
 
         cfg.autoSleepWakeUp.enabled = autoSleepWakeUp["enabled"].as<bool>();
         {
-            const auto sleep{autoSleepWakeUp["sleep"]};
+            const auto sleepTime{autoSleepWakeUp["sleep_time"]};
+            if (not sleepTime.is<ArduinoJson::JsonArray>() || sleepTime.size() != cfg.autoSleepWakeUp.sleepTime.size())
             {
-                const auto hour{sleep["hour"]};
-                if (not hour.is<uint8_t>())
-                {
-                    cfg.autoSleepWakeUp.sleep.hour = defaultCfg.autoSleepWakeUp.sleep.hour;
-                }
-                else
-                {
-                    cfg.autoSleepWakeUp.sleep.hour = hour.as<uint8_t>();
-                }
+                cfg.autoSleepWakeUp.sleepTime = defaultCfg.autoSleepWakeUp.sleepTime;
             }
+            else
             {
-                const auto minute{sleep["minute"]};
-                if (not minute.is<uint8_t>())
+                for (auto i{0}; i < cfg.autoSleepWakeUp.sleepTime.size(); ++i)
                 {
-                    cfg.autoSleepWakeUp.sleep.minute = defaultCfg.autoSleepWakeUp.sleep.minute;
-                }
-                else
-                {
-                    cfg.autoSleepWakeUp.sleep.minute = minute.as<uint8_t>();
-                }
-            }
-            {
-                const auto second{sleep["second"]};
-                if (not second.is<uint8_t>())
-                {
-                    cfg.autoSleepWakeUp.sleep.second = defaultCfg.autoSleepWakeUp.sleep.second;
-                }
-                else
-                {
-                    cfg.autoSleepWakeUp.sleep.second = second.as<uint8_t>();
+                    cfg.autoSleepWakeUp.sleepTime[i] = sleepTime[i].as<uint8_t>();
                 }
             }
         }
         {
-            const auto wakeUp{autoSleepWakeUp["wakeUp"]};
+            const auto wakeUpTime{autoSleepWakeUp["wakeup_time"]};
+            if (not wakeUpTime.is<ArduinoJson::JsonArray>() || wakeUpTime.size() != cfg.autoSleepWakeUp.wakeUpTime.size())
             {
-                const auto hour{wakeUp["hour"]};
-                if (not hour.is<uint8_t>())
-                {
-                    cfg.autoSleepWakeUp.wakeUp.hour = defaultCfg.autoSleepWakeUp.wakeUp.hour;
-                }
-                else
-                {
-                    cfg.autoSleepWakeUp.wakeUp.hour = hour.as<uint8_t>();
-                }
+                cfg.autoSleepWakeUp.wakeUpTime = defaultCfg.autoSleepWakeUp.wakeUpTime;
             }
+            else
             {
-                const auto minute{wakeUp["minute"]};
-                if (not minute.is<uint8_t>())
+                for (auto i{0}; i < cfg.autoSleepWakeUp.wakeUpTime.size(); ++i)
                 {
-                    cfg.autoSleepWakeUp.wakeUp.minute = defaultCfg.autoSleepWakeUp.wakeUp.minute;
-                }
-                else
-                {
-                    cfg.autoSleepWakeUp.wakeUp.minute = minute.as<uint8_t>();
-                }
-            }
-            {
-                const auto second{wakeUp["second"]};
-                if (not second.is<uint8_t>())
-                {
-                    cfg.autoSleepWakeUp.wakeUp.second = defaultCfg.autoSleepWakeUp.wakeUp.second;
-                }
-                else
-                {
-                    cfg.autoSleepWakeUp.wakeUp.second = second.as<uint8_t>();
+                    cfg.autoSleepWakeUp.wakeUpTime[i] = wakeUpTime[i].as<uint8_t>();
                 }
             }
         }

@@ -16,6 +16,11 @@
 #include "RealTime.hpp"
 #include "WebInterface.hpp"
 
+extern const uint8_t jquery_min_js_start[] asm("_binary_html_jquery_min_js_start");
+extern const uint8_t jquery_min_js_end[] asm("_binary_html_jquery_min_js_end");
+extern const uint8_t configuration_html_start[] asm("_binary_html_configuration_html_start");
+extern const uint8_t configuration_html_end[] asm("_binary_html_configuration_html_end");
+
 namespace WebInterface
 {
     static auto server{std::unique_ptr<AsyncWebServer>{}};
@@ -89,15 +94,25 @@ namespace WebInterface
         log_d("start = %s", RealTime::dateTimeToString(start).data());
         log_d("end = %s", RealTime::dateTimeToString(end).data());
 
-        Database::getSensorsData([&](const SensorData &sensorData) -> bool {
+        Database::getSensorsData([&](const SensorData &sensorData) {
             auto element{responseJson.addElement()};
             SensorData::serialize(element, sensorData);
-            return true;
         },id,start,end);
 
         response->setLength();
         request->send(response);
     }
+
+    static auto getJqueryJs(AsyncWebServerRequest *request) -> void
+    {
+        request->send_P(200,"text/javascript",jquery_min_js_start, jquery_min_js_end - jquery_min_js_start);
+    }
+
+    static auto getConfigurationHtml(AsyncWebServerRequest *request) -> void
+    {
+        request->send_P(200,"text/html",configuration_html_start, configuration_html_end - configuration_html_start);
+    }
+    
 
     static auto configureServer() -> void
     {
@@ -122,6 +137,10 @@ namespace WebInterface
 
             server->on("/sensors_data", HTTP_GET, getSensorsData);
 
+            server->on("/jquery.min.js", HTTP_GET, getJqueryJs);
+            server->on("/configuration.html", HTTP_GET, getConfigurationHtml);
+
+            DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
             server->begin();
         }
     }

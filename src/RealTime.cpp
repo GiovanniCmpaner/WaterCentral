@@ -52,14 +52,14 @@ namespace RealTime
         //const auto now{rtc.GetDateTime()};
         //const auto f1{RtcDateTime{now + 60}};
         //const auto f2{RtcDateTime{now + 120}};
-        //cfg.autoSleepWakeUp.sleep.hour = f1.Hour();
-        //cfg.autoSleepWakeUp.sleep.minute = f1.Minute();
-        //cfg.autoSleepWakeUp.wakeUp.hour = f2.Hour();
-        //cfg.autoSleepWakeUp.wakeUp.minute = f2.Minute();
+        //cfg.autoSleepWakeUp.sleepTime.hour = f1.Hour();
+        //cfg.autoSleepWakeUp.sleepTime.minute = f1.Minute();
+        //cfg.autoSleepWakeUp.wakeUpTime.hour = f2.Hour();
+        //cfg.autoSleepWakeUp.wakeUpTime.minute = f2.Minute();
 
         log_d("enabled = %u", cfg.autoSleepWakeUp.enabled);
-        log_d("wakeUp = %02u:%02u:%02u", cfg.autoSleepWakeUp.wakeUp.hour, cfg.autoSleepWakeUp.wakeUp.minute, cfg.autoSleepWakeUp.wakeUp.second);
-        log_d("sleep = %02u:%02u:%02u", cfg.autoSleepWakeUp.sleep.hour, cfg.autoSleepWakeUp.sleep.minute, cfg.autoSleepWakeUp.sleep.second);
+        log_d("sleepTime = %02u:%02u", cfg.autoSleepWakeUp.sleepTime[0], cfg.autoSleepWakeUp.sleepTime[1]);
+        log_d("wakeUpTime = %02u:%02u", cfg.autoSleepWakeUp.wakeUpTime[0], cfg.autoSleepWakeUp.wakeUpTime[1]);
 
         if (cfg.autoSleepWakeUp.enabled)
         {
@@ -67,16 +67,16 @@ namespace RealTime
             rtc.SetSquareWavePin(DS3231SquareWavePin_ModeAlarmBoth);
             {
                 const auto wakeUpAlarm{DS3231AlarmOne{0,
-                                                      cfg.autoSleepWakeUp.wakeUp.hour,
-                                                      cfg.autoSleepWakeUp.wakeUp.minute,
+                                                      cfg.autoSleepWakeUp.wakeUpTime[0],
+                                                      cfg.autoSleepWakeUp.wakeUpTime[1],
                                                       0,
                                                       DS3231AlarmOneControl_HoursMinutesSecondsMatch}};
                 rtc.SetAlarmOne(wakeUpAlarm);
             }
             {
                 const auto sleepAlarm{DS3231AlarmTwo{0,
-                                                     cfg.autoSleepWakeUp.sleep.hour,
-                                                     cfg.autoSleepWakeUp.sleep.minute,
+                                                     cfg.autoSleepWakeUp.sleepTime[0],
+                                                     cfg.autoSleepWakeUp.sleepTime[1],
                                                      DS3231AlarmTwoControl_HoursMinutesMatch}};
                 rtc.SetAlarmTwo(sleepAlarm);
             }

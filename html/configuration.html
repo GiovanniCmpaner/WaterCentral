@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="icon" href="data:,">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="jquery.min.js"></script>
+  <title>WaterCentral - Configuration</title>
+  <script>
+    $(document).ready(() => {
+      getConfiguration();
+    });
+    function getConfiguration() {
+      $("#message").fadeOut(250, () => $("#message").prop("class", "info").text("Loading").fadeIn(250));
+      $.ajax({
+        type: "GET",
+        url: "http://192.168.1.200/configuration",
+        timeout: 3000
+      })
+        .done((data) => {
+          $("#access_point_enabled").prop("checked", data.access_point.enabled);
+          $("#access_point_mac").prop("value", data.access_point.mac.map((n) => n.toString(16).toUpperCase().padStart(2, "0")).join("-"));
+          $("#access_point_ip").prop("value", data.access_point.ip.map((n) => n.toString(10)).join("."));
+          $("#access_point_netmask").prop("value", data.access_point.netmask.map((n) => n.toString(10)).join("."));
+          $("#access_point_gateway").prop("value", data.access_point.gateway.map((n) => n.toString(10)).join("."));
+          $("#access_point_port").prop("value", data.access_point.port);
+          $("#access_point_user").prop("value", data.access_point.user);
+          $("#access_point_password").prop("value", data.access_point.password);
+          $("#access_point_duration").prop("value", data.access_point.duration);
+
+          $("#station_enabled").prop("checked", data.station.enabled);
+          $("#station_mac").prop("value", data.station.mac.map((n) => n.toString(16).toUpperCase().padStart(2, "0")).join("-"));
+          $("#station_ip").prop("value", data.station.ip.map((n) => n.toString(10)).join("."));
+          $("#station_netmask").prop("value", data.station.netmask.map((n) => n.toString(10)).join("."));
+          $("#station_gateway").prop("value", data.station.gateway.map((n) => n.toString(10)).join("."));
+          $("#station_port").prop("value", data.station.port);
+          $("#station_user").prop("value", data.station.user);
+          $("#station_password").prop("value", data.station.password);
+
+          $("#auto_sleep_wakeup_enabled").prop("checked", data.auto_sleep_wakeup.enabled);
+          $("#auto_sleep_wakeup_sleep_time").prop("value", data.auto_sleep_wakeup.sleep_time.map((n) => n.toString(10).padStart(2, "0")).join(":"));
+          $("#auto_sleep_wakeup_wakeup_time").prop("value", data.auto_sleep_wakeup.wakeup_time.map((n) => n.toString(10).padStart(2, "0")).join(":"));
+
+          $("#message").fadeOut(250, () => $("#message").prop("class", "success").text("Done").fadeIn(250,() => $("#message").delay(2000).fadeOut(250)));
+        })
+        .fail((xhr, status, error) => {
+          $("#message").fadeOut(250, () => $("#message").prop("class", "error").text(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`).fadeIn(250));
+          setTimeout(getConfiguration, 20000);
+        });
+    };
+  </script>
+  <style>
+    html {
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    label {
+      display: inline-block;
+      width: 5em;
+    }
+
+    input {
+      width: 10em;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      padding: 0.5em;
+      background-color: #9e9e9e;
+      display: none;
+    }
+
+    .info {
+      color: #00529B;
+      background-color: #BDE5F8;
+    }
+
+    .success {
+      color: #4F8A10;
+      background-color: #DFF2BF;
+    }
+
+    .warning {
+      color: #9F6000;
+      background-color: #FEEFB3;
+    }
+
+    .error {
+      color: #D8000C;
+      background-color: #FFD2D2;
+    }
+  </style>
+</head>
+
+<body>
+  <nav id="message"></nav>
+  <h1>
+    Configuration
+  </h1>
+  <form id="configuration">
+    <fieldset>
+      <legend>Access Point</legend>
+      <table>
+        <tr>
+          <td> <label for="access_point_enabled">Enabled</label> </td>
+          <td> <input type="checkbox" id="access_point_enabled"> </td>
+        </tr>
+        <tr>
+          <td> <label for="access_point_mac">MAC</label> </td>
+          <td> <input type="text" id="access_point_mac" readonly> </td>
+        </tr>
+        <tr>
+          <td> <label for="access_point_ip">IP</label> </td>
+          <td> <input type="text" id="access_point_ip" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="access_point_netmask">Netmask</label> </td>
+          <td> <input type="text" id="access_point_netmask" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="access_point_gateway">Gateway</label> </td>
+          <td> <input type="text" id="access_point_gateway" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="access_point_port">Port</label> </td>
+          <td> <input type="number" id="access_point_port" min="1" max="65534" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="access_point_user">User</label> </td>
+          <td> <input type="text" id="access_point_user" minlength="4" maxlength="32" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="access_point_password">Password</label> </td>
+          <td> <input type="text" id="access_point_password" minlength="8" maxlength="64" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="access_point_duration">Duration</label> </td>
+          <td> <input type="number" id="access_point_duration" min="10" max="99999" required> </td>
+        </tr>
+      </table>
+    </fieldset>
+    <fieldset>
+      <legend>Station</legend>
+      <table>
+        <tr>
+          <td> <label for="station_enabled">Enabled</label> </td>
+          <td> <input type="checkbox" id="station_enabled"> </td>
+        </tr>
+        <tr>
+          <td> <label for="station_mac">MAC</label> </td>
+          <td> <input type="text" id="station_mac" readonly> </td>
+        </tr>
+        <tr>
+          <td> <label for="station_ip">IP</label> </td>
+          <td> <input type="text" id="station_ip" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="station_netmask">Netmask</label> </td>
+          <td> <input type="text" id="station_netmask" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="station_gateway">Gateway</label> </td>
+          <td> <input type="text" id="station_gateway" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="station_port">Port</label> </td>
+          <td> <input type="number" id="station_port" min="1" max="65534" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="station_user">User</label> </td>
+          <td> <input type="text" id="station_user" minlength="4" maxlength="32" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="station_password">Password</label> </td>
+          <td> <input type="text" id="station_password" minlength="8" maxlength="64" required> </td>
+        </tr>
+      </table>
+    </fieldset>
+    <fieldset>
+      <legend>Auto Sleep & WakeUp</legend>
+      <table>
+        <tr>
+          <td> <label for="auto_sleep_wakeup_enabled">Enabled</label> </td>
+          <td> <input type="checkbox" id="auto_sleep_wakeup_enabled" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="auto_sleep_wakeup_sleep_time">Sleep Time</label> </td>
+          <td> <input type="time" id="auto_sleep_wakeup_sleep_time" required> </td>
+        </tr>
+        <tr>
+          <td> <label for="auto_sleep_wakeup_wakeup_time">WakeUp Time</label> </td>
+          <td> <input type="time" id="auto_sleep_wakeup_wakeup_time" required> </td>
+        </tr>
+      </table>
+    </fieldset>
+    <input type="submit">
+  </form>
+</body>
+
+</html>
