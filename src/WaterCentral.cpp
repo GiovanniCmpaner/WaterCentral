@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include <esp_log.h>
+#include <esp32-hal.h>
 #include <esp_sleep.h>
 
 #include "Configuration.hpp"
@@ -8,6 +9,7 @@
 #include "Peripherals.hpp"
 #include "RealTime.hpp"
 #include "WebInterface.hpp"
+#include "Display.hpp"
 
 void setup()
 {
@@ -24,6 +26,9 @@ void setup()
     RealTime::init();
     Database::init();
     WebInterface::init();
+
+    digitalWrite(Peripherals::PRF_CTL,LOW);
+    Display::init();
 
     log_d("end");
 }

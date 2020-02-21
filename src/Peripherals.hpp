@@ -15,7 +15,7 @@ namespace Peripherals
             SCK = 14
         };
 
-        static auto hspi{SPIClass{HSPI}};
+        static SPIClass hspi{HSPI};
     }; // namespace SD_CARD
 
     namespace BME280
@@ -25,7 +25,34 @@ namespace Peripherals
             SDA = 21,
             SCL = 22
         };
-    };
+        static constexpr uint8_t I2C_ADDRESS{0x76};
+    }; // namespace BME280
+
+    namespace LCD
+    {
+        enum Pins
+        {
+            SDA = 21,
+            SCL = 22,
+        };
+        static constexpr uint8_t I2C_ADDRESS{0x3F};
+
+        namespace Expander
+        {
+            enum Pins
+            {
+                EN = 2,
+                RW = 1,
+                RS = 0,
+                D4 = 4,
+                D5 = 5,
+                D6 = 6,
+                D7 = 7,
+                BACKLIGHPIN = 3,
+            };
+        }
+        
+    }; // namespace LCD
 
     namespace PAM8403
     {
@@ -43,7 +70,8 @@ namespace Peripherals
             SCL = 22,
             SDA = 21
         };
-    };
+        static constexpr uint8_t I2C_ADDRESS{0x68};
+    }; // namespace DS3231
 
     namespace MPX_DP
     {
