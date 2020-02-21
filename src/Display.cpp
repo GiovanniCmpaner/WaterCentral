@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include <BME280I2C.h>
 #include <LiquidCrystal_I2C.h>
 #include <chrono>
 #include <cstdint>
@@ -7,8 +8,8 @@
 
 #include "Configuration.hpp"
 #include "Display.hpp"
+#include "LcdBarGraph.hpp"
 #include "Peripherals.hpp"
-#include <BME280I2C.h>
 
 namespace Display
 {
@@ -24,6 +25,8 @@ namespace Display
         Peripherals::LCD::Expander::Pins::BACKLIGHPIN,
         POSITIVE};
 
+    static LcdBarGraph bar{&lcd, 5, 6, 7};
+
     static auto process() -> void
     {
         while (1)
@@ -35,9 +38,12 @@ namespace Display
     {
         lcd.begin(20, 4);
         lcd.home();
-        lcd.print("Hello, ARDUINO ");
-        lcd.setCursor(0, 1);
-        lcd.print(" FORUM - fm   ");
+
+        bar.init();
+        bar.draw(0, 1, 0, 1, 30.0);
+        bar.draw(1, 1, 1, 1, 57.0);
+        bar.draw(2, 1, 2, 1, 60.0);
+        bar.draw(3, 1, 3, 1, 0.0);
 
         //std::async(std::launch::async, Display::process);
     }

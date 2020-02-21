@@ -52,7 +52,7 @@
       $("#message").fadeOut(250, () => $("#message").prop("class", "info").text("Sending").fadeIn(250));
       $.ajax({
         type: "POST",
-        url: "http://192.168.1.200/configuration",
+        url: "http://192.168.1.200/configuration.json",
         contentType: 'application/json',
         timeout: 3000,
         data: JSON.stringify(data)
@@ -72,7 +72,7 @@
       $("#message").fadeOut(250, () => $("#message").prop("class", "info").text("Loading").fadeIn(250));
       $.ajax({
         type: "GET",
-        url: "http://192.168.1.200/configuration",
+        url: "http://192.168.1.200/configuration.json",
         accepts: 'application/json',
         timeout: 3000
       })

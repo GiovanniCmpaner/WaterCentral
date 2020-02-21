@@ -2,12 +2,11 @@
 #include <ArduinoJson.hpp>
 #include <AsyncJson.h>
 #include <ESPAsyncWebServer.h>
-#include <FS.h>
-#include <SPIFFS.h>
 #include <WiFi.h>
 #include <chrono>
 #include <cstdlib>
 #include <esp_log.h>
+#include <functional>
 #include <memory>
 
 #include "Configuration.hpp"
@@ -25,7 +24,7 @@ namespace WebInterface
 {
     static auto server{std::unique_ptr<AsyncWebServer>{}};
 
-    static auto cacheFilter(AsyncWebServerRequest *request, std::function<AsyncWebServerResponse*()> responseCallback) -> void
+    static auto getProgmem(AsyncWebServerRequest *request, const std::string& contentType, const uint8_t *content, size_t len) -> void
     {
         const auto lastModified{RealTime::compiledDateTime()};
         auto ifModifiedSince{std::chrono::system_clock::time_point::min()};
@@ -35,7 +34,7 @@ namespace WebInterface
             ifModifiedSince = RealTime::stringToDateTimeHttp(request->getHeader("If-Modified-Since")->value().c_str());
         }
 
-        auto response{lastModified <= ifModifiedSince ? request->beginResponse(304) : responseCallback()};
+        auto response{lastModified <= ifModifiedSince ? request->beginResponse(304) : request->beginResponse_P(200, contentType.data(), content, len)};
         response->addHeader("Last-Modified", RealTime::dateTimeToStringHttp(lastModified).data());
         response->addHeader("Date", RealTime::dateTimeToStringHttp(std::chrono::system_clock::now()).data());
         response->addHeader("Cache-Control", "public, max-age=0");
@@ -118,20 +117,6 @@ namespace WebInterface
         request->send(response);
     }
 
-    static auto getJqueryJs(AsyncWebServerRequest *request) -> void
-    {
-        cacheFilter(request, []{
-            return new AsyncProgmemResponse{200, "application/javascript", jquery_min_js_start, static_cast<size_t>(jquery_min_js_end - jquery_min_js_start)};
-        });
-    }
-
-    static auto getConfigurationHtml(AsyncWebServerRequest *request) -> void
-    {
-        cacheFilter(request, []{
-            return new AsyncProgmemResponse{200, "text/html", configuration_html_start, static_cast<size_t>(configuration_html_end - configuration_html_start)};
-        });
-    }
-
     static auto configureServer() -> void
     {
         server.release();
@@ -147,16 +132,16 @@ namespace WebInterface
 
         if (server)
         {
-            server->on("/configuration", HTTP_GET, getConfiguration);
-            server->addHandler(new AsyncCallbackJsonWebHandler("/configuration", setConfiguration));
+            server->on("/configuration.json", HTTP_GET, getConfiguration);
+            server->addHandler(new AsyncCallbackJsonWebHandler("/configuration.json", setConfiguration));
 
-            server->on("/date_time", HTTP_GET, getDateTime);
-            server->addHandler(new AsyncCallbackJsonWebHandler("/date_time", setDateTime));
+            server->on("/date_time.json", HTTP_GET, getDateTime);
+            server->addHandler(new AsyncCallbackJsonWebHandler("/date_time.json", setDateTime));
 
-            server->on("/sensors_data", HTTP_GET, getSensorsData);
+            server->on("/sensors_data.json", HTTP_GET, getSensorsData);
 
-            server->on("/jquery.min.js", HTTP_GET, getJqueryJs);
-            server->on("/configuration.html", HTTP_GET, getConfigurationHtml);
+            server->on("/configuration.html", HTTP_GET, std::bind(getProgmem,std::placeholders::_1, "text/html", configuration_html_start, static_cast<size_t>(configuration_html_end - configuration_html_start)));
+            server->on("/jquery.min.js", HTTP_GET, std::bind(getProgmem,std::placeholders::_1, "application/javascript", jquery_min_js_start, static_cast<size_t>(jquery_min_js_end - jquery_min_js_start)));
 
             DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
             DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
