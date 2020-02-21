@@ -383,14 +383,6 @@ auto Configuration::load(Configuration *cfg) -> void
             {
                 auto json{doc.as<ArduinoJson::JsonVariant>()};
                 Configuration::deserialize(json, *cfg);
-                //
-                //auto fileHash{json["hash"].as<uint32_t>()};
-                //auto calcHash{cfg->hash()};
-                //if (fileHash != calcHash)
-                //{
-                //    log_d("hash mismatch");
-                //    valid = false;
-                //}
             }
         }
     }
@@ -428,41 +420,5 @@ auto Configuration::save(const Configuration &cfg) -> void
 
     log_d("end");
 }
-
-//auto Configuration::hash() const -> uint32_t
-//{
-//    auto hasher{FastCRC32{}};
-//
-//    auto hash{hasher.crc32(nullptr, 0)};
-//
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->station.enabled), sizeof(this->station.enabled));
-//    hash = hasher.crc32_upd(this->station.mac.data(), this->station.mac.size());
-//    hash = hasher.crc32_upd(this->station.ip.data(), this->station.ip.size());
-//    hash = hasher.crc32_upd(this->station.netmask.data(), this->station.netmask.size());
-//    hash = hasher.crc32_upd(this->station.gateway.data(), this->station.gateway.size());
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->station.port), sizeof(this->station.port));
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->station.user.data()), this->station.user.size());
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->station.password.data()), this->station.password.size());
-//
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->accessPoint.enabled), sizeof(this->accessPoint.enabled));
-//    hash = hasher.crc32_upd(this->accessPoint.mac.data(), this->accessPoint.mac.size());
-//    hash = hasher.crc32_upd(this->accessPoint.ip.data(), this->accessPoint.ip.size());
-//    hash = hasher.crc32_upd(this->accessPoint.netmask.data(), this->accessPoint.netmask.size());
-//    hash = hasher.crc32_upd(this->accessPoint.gateway.data(), this->accessPoint.gateway.size());
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->accessPoint.port), sizeof(this->accessPoint.port));
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->accessPoint.user.data()), this->accessPoint.user.size());
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(this->accessPoint.password.data()), this->accessPoint.password.size());
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->accessPoint.duration), sizeof(this->accessPoint.duration));
-//
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.enabled), sizeof(this->autoSleepWakeUp.enabled));
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.sleep.hour), sizeof(this->autoSleepWakeUp.sleep.hour));
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.sleep.minute), sizeof(this->autoSleepWakeUp.sleep.minute));
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.sleep.second), sizeof(this->autoSleepWakeUp.sleep.second));
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.wakeUp.hour), sizeof(this->autoSleepWakeUp.wakeUp.hour));
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.wakeUp.minute), sizeof(this->autoSleepWakeUp.wakeUp.minute));
-//    hash = hasher.crc32_upd(reinterpret_cast<const uint8_t *>(&this->autoSleepWakeUp.wakeUp.second), sizeof(this->autoSleepWakeUp.wakeUp.second));
-//
-//    return hash;
-//}
 
 Configuration cfg{};

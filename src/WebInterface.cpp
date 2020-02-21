@@ -25,6 +25,23 @@ namespace WebInterface
 {
     static auto server{std::unique_ptr<AsyncWebServer>{}};
 
+    static auto cacheFilter(AsyncWebServerRequest *request, std::function<AsyncWebServerResponse*()> responseCallback) -> void
+    {
+        const auto lastModified{RealTime::compiledDateTime()};
+        auto ifModifiedSince{std::chrono::system_clock::time_point::min()};
+
+        if (request->hasHeader("If-Modified-Since"))
+        {
+            ifModifiedSince = RealTime::stringToDateTimeHttp(request->getHeader("If-Modified-Since")->value().c_str());
+        }
+
+        auto response{lastModified <= ifModifiedSince ? request->beginResponse(304) : responseCallback()};
+        response->addHeader("Last-Modified", RealTime::dateTimeToStringHttp(lastModified).data());
+        response->addHeader("Date", RealTime::dateTimeToStringHttp(std::chrono::system_clock::now()).data());
+        response->addHeader("Cache-Control", "public, max-age=0");
+        request->send(response);
+    }
+
     static auto getConfiguration(AsyncWebServerRequest *request) -> void
     {
         auto response{new AsyncJsonResponse{false, 2048}};
@@ -38,11 +55,8 @@ namespace WebInterface
 
     static auto setConfiguration(AsyncWebServerRequest *request, JsonVariant &requestJson) -> void
     {
-        auto requestObj{requestJson.as<JsonObject>()};
-
-        Configuration::deserialize(requestObj, cfg);
+        Configuration::deserialize(requestJson, cfg);
         Configuration::save(cfg);
-
         request->send(204);
     }
 
@@ -63,7 +77,7 @@ namespace WebInterface
         auto requestObj{requestJson.as<JsonObject>()};
 
         const auto dateTime{RealTime::stringToDateTime(requestObj["date_time"])};
-        RealTime::adjust(dateTime);
+        RealTime::adjustDateTime(dateTime);
 
         request->send(204);
     }
@@ -97,7 +111,8 @@ namespace WebInterface
         Database::getSensorsData([&](const SensorData &sensorData) {
             auto element{responseJson.addElement()};
             SensorData::serialize(element, sensorData);
-        },id,start,end);
+        },
+                                 id, start, end);
 
         response->setLength();
         request->send(response);
@@ -105,14 +120,17 @@ namespace WebInterface
 
     static auto getJqueryJs(AsyncWebServerRequest *request) -> void
     {
-        request->send_P(200,"text/javascript",jquery_min_js_start, jquery_min_js_end - jquery_min_js_start);
+        cacheFilter(request, []{
+            return new AsyncProgmemResponse{200, "application/javascript", jquery_min_js_start, static_cast<size_t>(jquery_min_js_end - jquery_min_js_start)};
+        });
     }
 
     static auto getConfigurationHtml(AsyncWebServerRequest *request) -> void
     {
-        request->send_P(200,"text/html",configuration_html_start, configuration_html_end - configuration_html_start);
+        cacheFilter(request, []{
+            return new AsyncProgmemResponse{200, "text/html", configuration_html_start, static_cast<size_t>(configuration_html_end - configuration_html_start)};
+        });
     }
-    
 
     static auto configureServer() -> void
     {
@@ -141,6 +159,19 @@ namespace WebInterface
             server->on("/configuration.html", HTTP_GET, getConfigurationHtml);
 
             DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+            DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+            DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
+            DefaultHeaders::Instance().addHeader("Access-Control-Max-Age", "86400");
+            server->onNotFound([](AsyncWebServerRequest *request) {
+                if (request->method() == HTTP_OPTIONS)
+                {
+                    request->send(200);
+                }
+                else
+                {
+                    request->send(404);
+                }
+            });
             server->begin();
         }
     }

@@ -6,6 +6,7 @@
 #include <esp_log.h>
 #include <esp_sleep.h>
 
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
@@ -13,22 +14,35 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <sys/time.h>
 #include <thread>
 
 #include "Configuration.hpp"
 #include "Database.hpp"
 #include "Peripherals.hpp"
 #include "RealTime.hpp"
-#include <chrono>
-#include <sys/time.h>
 
 namespace RealTime
 {
-    static auto rtc(RtcDS3231<TwoWire>{Wire});
-    static auto future{std::future<void>{}};
+    static RtcDS3231<TwoWire> rtc{Wire};
+    static std::mutex mutex{};
+    static std::future<void> alarmFuture{};
+    static std::future<void> syncFuture{};
 
-    static auto checkDateTime() -> void
+    static auto syncDateTime() -> void
     {
+        std::lock_guard<std::mutex> lock{mutex};
+
+        const auto time{timeval{static_cast<std::time_t>(rtc.GetDateTime().Epoch32Time())}};
+        settimeofday(&time, nullptr);
+    }
+
+    static auto startHardware() -> void
+    {
+        std::lock_guard<std::mutex> lock{mutex};
+
+        rtc.Begin();
+
         if (not rtc.IsDateTimeValid() && rtc.LastError() != I2C_ERROR_OK)
         {
             log_e("rtc error: %d", rtc.LastError());
@@ -40,22 +54,11 @@ namespace RealTime
             log_d("starting rtc");
             rtc.SetIsRunning(true);
         }
-
-        const auto time{timeval{static_cast<std::time_t>(rtc.GetDateTime().Epoch32Time())}};
-        settimeofday(&time, nullptr);
-
-        log_d("now = %s", RealTime::dateTimeToString(std::chrono::system_clock::now()).data());
     }
 
     static auto configureAlarms() -> void
     {
-        //const auto now{rtc.GetDateTime()};
-        //const auto f1{RtcDateTime{now + 60}};
-        //const auto f2{RtcDateTime{now + 120}};
-        //cfg.autoSleepWakeUp.sleepTime.hour = f1.Hour();
-        //cfg.autoSleepWakeUp.sleepTime.minute = f1.Minute();
-        //cfg.autoSleepWakeUp.wakeUpTime.hour = f2.Hour();
-        //cfg.autoSleepWakeUp.wakeUpTime.minute = f2.Minute();
+        std::lock_guard<std::mutex> lock{mutex};
 
         log_d("enabled = %u", cfg.autoSleepWakeUp.enabled);
         log_d("sleepTime = %02u:%02u", cfg.autoSleepWakeUp.sleepTime[0], cfg.autoSleepWakeUp.sleepTime[1]);
@@ -92,20 +95,40 @@ namespace RealTime
         esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(Peripherals::DS3231::SQW_INT), LOW);
     }
 
-    static auto process() -> void
+    static auto checkAlarms() -> void
+    {
+        std::lock_guard<std::mutex> lock{mutex};
+
+        if (cfg.autoSleepWakeUp.enabled)
+        {
+            const auto flags{rtc.LatchAlarmsTriggeredFlags()};
+            if (flags & DS3231AlarmFlag_Alarm2)
+            {
+                esp_deep_sleep_start();
+            }
+        }
+    }
+
+    static auto alarmTask() -> void
     {
         auto timePoint{std::chrono::system_clock::now()};
         while (1)
         {
-            if (cfg.autoSleepWakeUp.enabled)
-            {
-                const auto flags{rtc.LatchAlarmsTriggeredFlags()};
-                if (flags & DS3231AlarmFlag_Alarm2)
-                {
-                    esp_deep_sleep_start();
-                }
-            }
-            timePoint += std::chrono::seconds(1);
+            checkAlarms();
+
+            timePoint += std::chrono::minutes(1);
+            std::this_thread::sleep_until(timePoint);
+        }
+    }
+
+    static auto syncTask() -> void
+    {
+        auto timePoint{std::chrono::system_clock::now()};
+        while (1)
+        {
+            syncDateTime();
+
+            timePoint += std::chrono::minutes(5);
             std::this_thread::sleep_until(timePoint);
         }
     }
@@ -114,16 +137,19 @@ namespace RealTime
     {
         log_d("begin");
 
-        rtc.Begin();
-        checkDateTime();
+        startHardware();
         configureAlarms();
+        syncDateTime();
 
         log_d("end");
-        future = std::async(std::launch::async, process);
+        alarmFuture = std::async(std::launch::async, alarmTask);
+        syncFuture = std::async(std::launch::async, syncTask);
     }
 
-    auto adjust(const std::chrono::system_clock::time_point &timePoint) -> void
+    auto adjustDateTime(const std::chrono::system_clock::time_point &timePoint) -> void
     {
+        std::lock_guard<std::mutex> lock{mutex};
+
         const auto time{timeval{std::chrono::system_clock::to_time_t(timePoint)}};
         settimeofday(&time, nullptr);
 
@@ -146,5 +172,30 @@ namespace RealTime
         auto time{std::chrono::system_clock::to_time_t(timePoint)};
         stream << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
         return stream.str();
+    }
+
+    auto stringToDateTimeHttp(const std::string &str) -> std::chrono::system_clock::time_point
+    {
+        auto stream{std::istringstream{str}};
+        auto time{std::tm{}};
+        stream >> std::get_time(&time, "%a, %d %b %Y %H:%M:%S GMT");
+        return std::chrono::system_clock::from_time_t(std::mktime(&time));
+    }
+
+    auto dateTimeToStringHttp(const std::chrono::system_clock::time_point &timePoint) -> std::string
+    {
+        auto stream{std::ostringstream{}};
+        auto time{std::chrono::system_clock::to_time_t(timePoint)};
+        stream << std::put_time(std::localtime(&time), "%a, %d %b %Y %H:%M:%S GMT");
+        return stream.str();
+    }
+
+    auto compiledDateTime() -> std::chrono::system_clock::time_point
+    {
+        auto stream{std::stringstream{}};
+        stream << __DATE__ << ' ' << __TIME__;
+        auto time{std::tm{}};
+        stream >> std::get_time(&time, "%b %d %Y %H:%M:%S");
+        return std::chrono::system_clock::from_time_t(std::mktime(&time));
     }
 } // namespace RealTime

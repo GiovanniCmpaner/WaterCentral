@@ -10,12 +10,70 @@
   <script>
     $(document).ready(() => {
       getConfiguration();
+      $("#configuration").submit((event) => {
+        event.preventDefault();
+        if ($("#configuration")[0].checkValidity()) {
+          setConfiguration();
+        }
+      });
     });
+
+    function setConfiguration() {
+      var data = {
+        access_point: {
+          enabled: $("#access_point_enabled").prop("checked"),
+          mac: $("#access_point_mac").prop("value").split("-").map((s) => parseInt(s, 16)),
+          ip: $("#access_point_ip").prop("value").split(".").map((s) => parseInt(s, 10)),
+          netmask: $("#access_point_netmask").prop("value").split(".").map((s) => parseInt(s, 10)),
+          gateway: $("#access_point_gateway").prop("value").split(".").map((s) => parseInt(s, 10)),
+          port: $("#access_point_port").prop("value"),
+          user: $("#access_point_user").prop("value"),
+          password: $("#access_point_password").prop("value"),
+          duration: $("#access_point_duration").prop("value")
+        },
+        station: {
+          enabled: $("#station_enabled").prop("checked"),
+          mac: $("#station_mac").prop("value").split("-").map((s) => parseInt(s, 16)),
+          ip: $("#station_ip").prop("value").split(".").map((s) => parseInt(s, 10)),
+          netmask: $("#station_netmask").prop("value").split(".").map((s) => parseInt(s, 10)),
+          gateway: $("#station_gateway").prop("value").split(".").map((s) => parseInt(s, 10)),
+          port: $("#station_port").prop("value"),
+          user: $("#station_user").prop("value"),
+          password: $("#station_password").prop("value")
+        },
+        auto_sleep_wakeup: {
+          enabled: $("#auto_sleep_wakeup_enabled").prop("checked"),
+          sleep_time: $("#auto_sleep_wakeup_sleep_time").prop("value").split(":").map((s) => parseInt(s, 10)),
+          wakeup_time: $("#auto_sleep_wakeup_wakeup_time").prop("value").split(":").map((s) => parseInt(s, 10))
+        }
+      };
+
+      $("#configuration :input").prop("disabled",true);
+      $("#message").fadeOut(250, () => $("#message").prop("class", "info").text("Sending").fadeIn(250));
+      $.ajax({
+        type: "POST",
+        url: "http://192.168.1.200/configuration",
+        contentType: 'application/json',
+        timeout: 3000,
+        data: JSON.stringify(data)
+      })
+        .done(() => {
+          $("#configuration :input").prop("disabled",false);
+          $("#message").fadeOut(250, () => $("#message").prop("class", "success").text("Done").fadeIn(250, () => $("#message").delay(2000).fadeOut(250)));
+        })
+        .fail((xhr, status, error) => {
+          $("#configuration :input").prop("disabled",false);
+          $("#message").fadeOut(250, () => $("#message").prop("class", "error").text(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`).fadeIn(250));
+        });
+    }
+
     function getConfiguration() {
+      $("#configuration :input").prop("disabled",true);
       $("#message").fadeOut(250, () => $("#message").prop("class", "info").text("Loading").fadeIn(250));
       $.ajax({
         type: "GET",
         url: "http://192.168.1.200/configuration",
+        accepts: 'application/json',
         timeout: 3000
       })
         .done((data) => {
@@ -42,13 +100,14 @@
           $("#auto_sleep_wakeup_sleep_time").prop("value", data.auto_sleep_wakeup.sleep_time.map((n) => n.toString(10).padStart(2, "0")).join(":"));
           $("#auto_sleep_wakeup_wakeup_time").prop("value", data.auto_sleep_wakeup.wakeup_time.map((n) => n.toString(10).padStart(2, "0")).join(":"));
 
-          $("#message").fadeOut(250, () => $("#message").prop("class", "success").text("Done").fadeIn(250,() => $("#message").delay(2000).fadeOut(250)));
+          $("#configuration :input").prop("disabled",false);
+          $("#message").fadeOut(250, () => $("#message").prop("class", "success").text("Done").fadeIn(250, () => $("#message").delay(2000).fadeOut(250)));
         })
         .fail((xhr, status, error) => {
+          $("#configuration :input").prop("disabled",false);
           $("#message").fadeOut(250, () => $("#message").prop("class", "error").text(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`).fadeIn(250));
-          setTimeout(getConfiguration, 20000);
         });
-    };
+    }
   </script>
   <style>
     html {
@@ -99,7 +158,7 @@
   <h1>
     Configuration
   </h1>
-  <form id="configuration">
+  <form id="configuration" readonly>
     <fieldset>
       <legend>Access Point</legend>
       <table>
@@ -183,7 +242,7 @@
       <table>
         <tr>
           <td> <label for="auto_sleep_wakeup_enabled">Enabled</label> </td>
-          <td> <input type="checkbox" id="auto_sleep_wakeup_enabled" required> </td>
+          <td> <input type="checkbox" id="auto_sleep_wakeup_enabled"> </td>
         </tr>
         <tr>
           <td> <label for="auto_sleep_wakeup_sleep_time">Sleep Time</label> </td>
