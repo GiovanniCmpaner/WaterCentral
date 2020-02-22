@@ -50,6 +50,7 @@
         "chrono": "cpp",
         "atomic": "cpp",
         "condition_variable": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "random": "cpp"
     }
 }

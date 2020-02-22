@@ -15,17 +15,27 @@
 #include "RealTime.hpp"
 #include "WebInterface.hpp"
 
-extern const uint8_t jquery_min_js_start[] asm("_binary_html_jquery_min_js_start");
-extern const uint8_t jquery_min_js_end[] asm("_binary_html_jquery_min_js_end");
 extern const uint8_t configuration_html_start[] asm("_binary_html_configuration_html_start");
+extern const uint8_t configuration_js_start[] asm("_binary_html_configuration_js_start");
+extern const uint8_t data_html_start[] asm("_binary_html_data_html_start");
+extern const uint8_t data_js_start[] asm("_binary_html_data_js_start");
+extern const uint8_t jquery_min_js_start[] asm("_binary_html_jquery_min_js_start");
+extern const uint8_t sensors_html_start[] asm("_binary_html_sensors_html_start");
+extern const uint8_t sensors_js_start[] asm("_binary_html_sensors_js_start");
+extern const uint8_t style_css_start[] asm("_binary_html_style_css_start");
+
 extern const uint8_t configuration_html_end[] asm("_binary_html_configuration_html_end");
+extern const uint8_t configuration_js_end[] asm("_binary_html_configuration_js_end");
+extern const uint8_t data_html_end[] asm("_binary_html_data_html_end");
+extern const uint8_t data_js_end[] asm("_binary_html_data_js_end");
+extern const uint8_t jquery_min_js_end[] asm("_binary_html_jquery_min_js_end");
+extern const uint8_t sensors_html_end[] asm("_binary_html_sensors_html_end");
+extern const uint8_t sensors_js_end[] asm("_binary_html_sensors_js_end");
+extern const uint8_t style_css_end[] asm("_binary_html_style_css_end");
 
 namespace WebInterface
 {
-    static auto server
-    {
-        std::unique_ptr<AsyncWebServer> {}
-    };
+    static std::unique_ptr<AsyncWebServer> server{};
 
     namespace Get
     {
@@ -56,6 +66,7 @@ namespace WebInterface
             response->setLength();
             request->send(response);
         }
+
         static auto handleSensorsDataJson(AsyncWebServerRequest* request) -> void
         {
             auto response{new AsyncJsonResponse{true, 4096}};
@@ -92,16 +103,6 @@ namespace WebInterface
             request->send(response);
         }
 
-        static auto handleConfigurationHtml(AsyncWebServerRequest* request) -> void
-        {
-            handleProgmem(request,"text/html", configuration_html_start, static_cast<size_t>(configuration_html_end - configuration_html_start));
-        }
-
-        static auto handleJqueryJs(AsyncWebServerRequest* request) -> void
-        {
-            handleProgmem(request,"application/javascript", jquery_min_js_start, static_cast<size_t>(jquery_min_js_end - jquery_min_js_start));
-        }
-
         static auto handleDateTimeJson(AsyncWebServerRequest* request) -> void
         {
             auto response{new AsyncJsonResponse{}};
@@ -112,6 +113,46 @@ namespace WebInterface
 
             response->setLength();
             request->send(response);
+        }
+
+        static auto handleConfigurationHtml(AsyncWebServerRequest* request) -> void
+        {
+            handleProgmem(request,"text/html", configuration_html_start, static_cast<size_t>(configuration_html_end - configuration_html_start));
+        }
+
+        static auto handleConfigurationJs(AsyncWebServerRequest* request) -> void
+        {
+            handleProgmem(request,"application/javascript", configuration_js_start, static_cast<size_t>(configuration_js_end - configuration_js_start));
+        }
+
+        static auto handleDataHtml(AsyncWebServerRequest* request) -> void
+        {
+            handleProgmem(request,"text/html", data_html_start, static_cast<size_t>(data_html_end - data_html_start));
+        }
+
+        static auto handleDataJs(AsyncWebServerRequest* request) -> void
+        {
+            handleProgmem(request,"application/javascript", data_js_start, static_cast<size_t>(data_js_end - data_js_start));
+        }
+
+        static auto handleJqueryJs(AsyncWebServerRequest* request) -> void
+        {
+            handleProgmem(request,"application/javascript", jquery_min_js_start, static_cast<size_t>(jquery_min_js_end - jquery_min_js_start));
+        }
+
+        static auto handleSensorsHtml(AsyncWebServerRequest* request) -> void
+        {
+            handleProgmem(request,"text/html", sensors_html_start, static_cast<size_t>(sensors_html_end - sensors_html_start));
+        }
+
+        static auto handleSensorsJs(AsyncWebServerRequest* request) -> void
+        {
+            handleProgmem(request,"application/javascript", sensors_js_start, static_cast<size_t>(sensors_js_end - sensors_js_start));
+        }
+
+        static auto handleStyleCss(AsyncWebServerRequest* request) -> void
+        {
+            handleProgmem(request,"text/css", style_css_start, static_cast<size_t>(style_css_end - style_css_start));
         }
     } // namespace Get
 
@@ -151,15 +192,19 @@ namespace WebInterface
         if (server)
         {
             server->on("/configuration.json", HTTP_GET, Get::handleConfigurationJson);
-            server->addHandler(new AsyncCallbackJsonWebHandler("/configuration.json", Post::handleConfigurationJson));
-
             server->on("/date_time.json", HTTP_GET, Get::handleDateTimeJson);
-            server->addHandler(new AsyncCallbackJsonWebHandler("/date_time.json", Post::handleDateTimeJson));
-
             server->on("/sensors_data.json", HTTP_GET, Get::handleSensorsDataJson);
-
             server->on("/configuration.html", HTTP_GET, Get::handleConfigurationHtml);
+            server->on("/configuration.js", HTTP_GET, Get::handleConfigurationJs);
+            server->on("/data.html", HTTP_GET, Get::handleDataHtml);
+            server->on("/data.js", HTTP_GET, Get::handleDataJs);
             server->on("/jquery.min.js", HTTP_GET, Get::handleJqueryJs);
+            server->on("/sensors.html", HTTP_GET, Get::handleSensorsHtml);
+            server->on("/sensors.js", HTTP_GET, Get::handleSensorsJs);
+            server->on("/style.css", HTTP_GET, Get::handleStyleCss);
+            
+            server->addHandler(new AsyncCallbackJsonWebHandler("/configuration.json", Post::handleConfigurationJson));
+            server->addHandler(new AsyncCallbackJsonWebHandler("/date_time.json", Post::handleDateTimeJson));
 
             DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
             DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
@@ -281,9 +326,5 @@ namespace WebInterface
         configureStation();
 
         log_d("end");
-    }
-
-    auto process() -> void
-    {
     }
 } // namespace WebInterface

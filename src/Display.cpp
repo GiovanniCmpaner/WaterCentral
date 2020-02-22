@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstdint>
 #include <future>
+#include <esp_pthread.h>
 
 #include "Configuration.hpp"
 #include "Display.hpp"
@@ -64,9 +65,10 @@ namespace Display
                 {
                     lcd.print(cfg.sensors[n].name.data());
                 }
-                //lcd.setCursor(nameMaxLength + 1, nRow);
-                bar.draw(n, nameMaxLength + 1, nRow, 20 - (nameMaxLength + 1), map(Sensors::getValue(n), cfg.sensors[n].min, cfg.sensors[n].max, 0.0, 100.0));
 
+                
+                //lcd.setCursor(nameMaxLength + 1, nRow);
+                //bar.draw(n, nameMaxLength + 1, nRow, 20 - (nameMaxLength + 1), map(random(0,100), cfg.sensors[n].min, cfg.sensors[n].max, 0.0, 100.0));
                 nRow++;
             }
         }
@@ -84,7 +86,7 @@ namespace Display
             update();
             check();
 
-            timePoint += std::chrono::seconds(1);
+            timePoint += std::chrono::seconds(5);
             std::this_thread::sleep_until(timePoint);
         }
     }

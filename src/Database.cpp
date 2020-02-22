@@ -1,12 +1,12 @@
 #include <Arduino.h>
 
 #include <FS.h>
-#include <FreeRTOS.h>
-#include <SD.h>
 #include <cstdlib>
 #include <esp_log.h>
-#include <freertos/task.h>
 #include <sqlite3.h>
+#include <future>
+#include <thread>
+#include <SD.h>
 
 #include "Configuration.hpp"
 #include "Database.hpp"
@@ -15,10 +15,9 @@
 
 namespace Database
 {
-    static auto db
-    {
-        (sqlite3*) {}
-    };
+    static sqlite3* db{};
+    static std::future<void> future{};
+    static std::mutex mutex{};
 
     auto SensorData::serialize(ArduinoJson::JsonVariant& json, const SensorData& sensorData) -> void
     {
@@ -43,12 +42,31 @@ namespace Database
         sensorData.sensors[0] = 1.234;
         sensorData.sensors[1] = 1.234;
         sensorData.sensors[2] = 1.234;
-        sensorData.sensors[3] = 1.234;
         return sensorData;
+    }
+
+    static auto initializeDatabase() -> void
+    {
+        std::lock_guard<std::mutex> lock{mutex};
+
+        log_d("begin");
+
+        sqlite3_initialize();
+
+        const auto rc{sqlite3_open("/sd/sensors_data.db", &db)};
+        if (rc != SQLITE_OK)
+        {
+            log_e("database open error: %s\n", sqlite3_errmsg(db));
+            std::abort();
+        };
+
+        log_d("end");
     }
 
     static auto createTable() -> void
     {
+        std::lock_guard<std::mutex> lock{mutex};
+
         log_d("begin");
         {
             const auto query{"CREATE TABLE IF NOT EXISTS               "
@@ -60,8 +78,7 @@ namespace Database
                              "        PRESSURE    NUMERIC,             "
                              "        SENSOR_1    NUMERIC,             "
                              "        SENSOR_2    NUMERIC,             "
-                             "        SENSOR_3    NUMERIC,             "
-                             "        SENSOR_4    NUMERIC              "
+                             "        SENSOR_3    NUMERIC              "
                              "    )                                    "};
 
             const auto rc{sqlite3_exec(db, query, nullptr, nullptr, nullptr)};
@@ -87,7 +104,9 @@ namespace Database
 
     static auto insertSensorData(const SensorData& sensorData) -> int64_t
     {
-        auto id{int64_t{}};
+        std::lock_guard<std::mutex> lock{mutex};
+
+        int64_t id{};
         log_d("begin");
 
         const auto query
@@ -99,13 +118,12 @@ namespace Database
             "    PRESSURE,              "
             "    SENSOR_1,              "
             "    SENSOR_2,              "
-            "    SENSOR_3,              "
-            "    SENSOR_4               "
+            "    SENSOR_3               "
             ")                          "
             "VALUES                     "
-            "    (?,?,?,?,?,?,?,?)     "};
+            "    (?,?,?,?,?,?,?)        "};
 
-        auto res{(sqlite3_stmt*) {}};
+        sqlite3_stmt* res;
         const auto rc{sqlite3_prepare_v2(db, query, strlen(query), &res, nullptr)};
         if (rc != SQLITE_OK)
         {
@@ -121,8 +139,6 @@ namespace Database
             sqlite3_bind_double(res, 5, sensorData.sensors[0]);
             sqlite3_bind_double(res, 6, sensorData.sensors[1]);
             sqlite3_bind_double(res, 7, sensorData.sensors[2]);
-            sqlite3_bind_double(res, 8, sensorData.sensors[3]);
-
             if (sqlite3_step(res) != SQLITE_DONE)
             {
                 log_d("insert error: %s", sqlite3_errmsg(db));
@@ -135,65 +151,28 @@ namespace Database
         return id;
     }
 
-    //static auto scheduleInsert() -> void
-    //{
-    //    log_d("begin");
-//
-    //    const auto now{RealTime::now()};
-    //    if (now.IsValid())
-    //    {
-    //        future = RtcDateTime{((now + 59) / 60) * 60};
-    //    }
-    //    else
-    //    {
-    //        future = RtcDateTime{};
-    //    }
-//
-    //    log_d("end");
-    //}
-//
-    //static auto process(void *) -> void
-    //{
-    //    vTaskDelay(pdMS_TO_TICKS(10000));
-//
-    //    const auto interval{pdMS_TO_TICKS(60000)};
-    //    auto lastWakeTime{xTaskGetTickCount()};
-    //    while (1)
-    //    {
-    //        if (future.IsValid())
-    //        {
-    //            const auto now{RealTime::now()};
-    //            if (now >= future)
-    //            {
-    //                insertSensorData(SensorData::get());
-    //                scheduleInsert();
-    //            }
-    //        }
-    //        else
-    //        {
-    //            scheduleInsert();
-    //        }
-    //        vTaskDelayUntil(&lastWakeTime, interval);
-    //    }
-    //}
+    static auto insertTask() -> void
+    {
+        auto timePoint{RealTime::ceil(std::chrono::system_clock::now(), std::chrono::minutes(5))};
+        log_d("next insert = %s",RealTime::dateTimeToString(timePoint).data());
+        while (1)
+        {
+            std::this_thread::sleep_until(timePoint);
+            timePoint += std::chrono::minutes(5);
+
+            insertSensorData(SensorData::get());
+        }
+    }
 
     auto init() -> void
     {
         log_d("begin");
-
-        sqlite3_initialize();
-
-        const auto rc{sqlite3_open("/sd/sensors_data.db", &db)};
-        if (rc != SQLITE_OK)
-        {
-            log_e("database open error: %s\n", sqlite3_errmsg(db));
-            std::abort();
-        };
-
+        
+        initializeDatabase();
         createTable();
 
         log_d("end");
-        //xTaskCreatePinnedToCore(process, "Database::process", 4096, nullptr, 0, &taskHandle, 0);
+        future = std::async(std::launch::async, Database::insertTask);
     }
 
     auto getSensorsData(
@@ -203,6 +182,8 @@ namespace Database
         std::chrono::system_clock::time_point end
     ) -> void
     {
+        std::lock_guard<std::mutex> lock{mutex};
+
         log_d("begin");
 
         const auto query
@@ -224,7 +205,7 @@ namespace Database
             "    AND ( DATE_TIME <= IFNULL(?,DATE_TIME) ) "
             "LIMIT 20                                     "};
 
-        auto res{(sqlite3_stmt*) {}};
+        sqlite3_stmt* res;
         const auto rc{sqlite3_prepare_v2(db, query, strlen(query), &res, nullptr)};
         if (rc != SQLITE_OK)
         {

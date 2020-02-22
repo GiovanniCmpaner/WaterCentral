@@ -3,6 +3,7 @@
 #include <esp_log.h>
 #include <esp32-hal.h>
 #include <esp_sleep.h>
+#include <esp_pthread.h>
 
 #include "Configuration.hpp"
 #include "Database.hpp"
@@ -19,6 +20,13 @@ void setup()
     Serial.setDebugOutput(true);
     log_d("begin");
 
+    {
+        esp_pthread_cfg_t cfg;
+        esp_pthread_get_cfg(&cfg);
+        cfg.stack_size = 4096;
+        esp_pthread_set_cfg(&cfg);
+    }
+
     Peripherals::init();
     
     Configuration::init();
@@ -30,7 +38,7 @@ void setup()
 
     digitalWrite(Peripherals::PRF_CTL,LOW);
     Display::init();
-    Sensors::init();
+    //Sensors::init();
 
     log_d("end");
 }

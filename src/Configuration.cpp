@@ -9,6 +9,10 @@
 #include <cstdlib>
 #include <esp_log.h>
 
+#include <string>
+//#undef B1
+//#include <nlohmannJson.hpp>
+
 #include "Configuration.hpp"
 #include "Peripherals.hpp"
 
@@ -105,6 +109,40 @@ auto Configuration::init() -> void
 
     log_d("end");
 }
+
+//void to_json(nlohmann::json& j, const Configuration::AccessPoint& accessPoint)
+//{
+//    j =
+//    {
+//        "enabled", cfg.accessPoint.enabled,
+//        "mac", accessPointMAC,
+//        "ip", cfg.accessPoint.ip,
+//        "netmask", cfg.accessPoint.ip,
+//        "gateway", cfg.accessPoint.gateway,
+//        "port", cfg.accessPoint.port,
+//        "user", cfg.accessPoint.user,
+//        "password", cfg.accessPoint.password,
+//        "duration", cfg.accessPoint.duration
+//    };
+//}
+//
+//
+//void to_json(nlohmann::json& j, const Configuration& cfg)
+//{
+//    j =
+//    {
+//        {
+//            "access_point", cfg.accessPoint
+//        }
+//    };
+//}
+//
+//void from_json(const nlohmann::json& j, Configuration& cfg)
+//{
+//    j.at("name").get_to(p.name);
+//    j.at("address").get_to(p.address);
+//    j.at("age").get_to(p.age);
+//}
 
 auto Configuration::serialize(ArduinoJson::JsonVariant& json, const Configuration& cfg) -> void
 {
@@ -204,26 +242,17 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         const auto accessPoint{json["access_point"]};
         {
             const auto enabled{accessPoint["enabled"]};
-            if (not enabled.is<bool>())
-            {
-                cfg.accessPoint.enabled = defaultCfg.accessPoint.enabled;
-            }
-            else
+            if (enabled.is<bool>())
             {
                 cfg.accessPoint.enabled = enabled.as<bool>();
             }
         }
-        cfg.accessPoint.enabled = accessPoint["enabled"].as<bool>();
         {
             cfg.accessPoint.mac = accessPointMAC;
         }
         {
             const auto ip{accessPoint["ip"]};
-            if (not ip.is<ArduinoJson::JsonArray>() || ip.size() != cfg.accessPoint.ip.size())
-            {
-                cfg.accessPoint.ip = defaultCfg.accessPoint.ip;
-            }
-            else
+            if (ip.is<ArduinoJson::JsonArray>() and ip.size() == cfg.accessPoint.ip.size())
             {
                 for (auto i{0}; i < cfg.accessPoint.ip.size(); ++i)
                 {
@@ -233,11 +262,7 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         }
         {
             const auto netmask{accessPoint["netmask"]};
-            if (not netmask.is<ArduinoJson::JsonArray>() || netmask.size() != cfg.accessPoint.netmask.size())
-            {
-                cfg.accessPoint.netmask = defaultCfg.accessPoint.netmask;
-            }
-            else
+            if (netmask.is<ArduinoJson::JsonArray>() and netmask.size() == cfg.accessPoint.netmask.size())
             {
                 for (auto i{0}; i < cfg.accessPoint.netmask.size(); ++i)
                 {
@@ -247,11 +272,7 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         }
         {
             const auto gateway{accessPoint["gateway"]};
-            if (not gateway.is<ArduinoJson::JsonArray>() || gateway.size() != cfg.accessPoint.gateway.size())
-            {
-                cfg.accessPoint.gateway = defaultCfg.accessPoint.gateway;
-            }
-            else
+            if (gateway.is<ArduinoJson::JsonArray>() and gateway.size() == cfg.accessPoint.gateway.size())
             {
                 for (auto i{0}; i < cfg.accessPoint.gateway.size(); ++i)
                 {
@@ -261,44 +282,28 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         }
         {
             const auto port{accessPoint["port"]};
-            if (not port.is<uint16_t>())
-            {
-                cfg.accessPoint.port = defaultCfg.accessPoint.port;
-            }
-            else
+            if (port.is<uint16_t>())
             {
                 cfg.accessPoint.port = port.as<uint16_t>();
             }
         }
         {
             const auto user{accessPoint["user"]};
-            if (not user.is<std::string>())
-            {
-                cfg.accessPoint.user = defaultCfg.accessPoint.user;
-            }
-            else
+            if (user.is<std::string>())
             {
                 cfg.accessPoint.user = user.as<std::string>();
             }
         }
         {
             const auto password{accessPoint["password"]};
-            if (not password.is<std::string>())
-            {
-                cfg.accessPoint.password = defaultCfg.accessPoint.password;
-            }
-            else
+            if (password.is<std::string>())
             {
                 cfg.accessPoint.password = password.as<std::string>();
             }
         }
         {
             const auto duration{accessPoint["duration"]};
-            if (not duration.is<uint16_t>())
-            {
-                cfg.accessPoint.duration = defaultCfg.accessPoint.duration;
-            }
-            else
+            if (duration.is<uint16_t>())
             {
                 cfg.accessPoint.duration = duration.as<uint16_t>();
             }
@@ -308,11 +313,7 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         const auto station{json["station"]};
         {
             const auto enabled{station["enabled"]};
-            if (not enabled.is<bool>())
-            {
-                cfg.station.enabled = defaultCfg.station.enabled;
-            }
-            else
+            if (enabled.is<bool>())
             {
                 cfg.station.enabled = enabled.as<bool>();
             }
@@ -322,11 +323,7 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         }
         {
             const auto ip{station["ip"]};
-            if (not ip.is<ArduinoJson::JsonArray>() || ip.size() != cfg.station.ip.size())
-            {
-                cfg.station.ip = defaultCfg.station.ip;
-            }
-            else
+            if (ip.is<ArduinoJson::JsonArray>() and ip.size() == cfg.station.ip.size())
             {
                 for (auto i{0}; i < cfg.station.ip.size(); ++i)
                 {
@@ -336,11 +333,7 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         }
         {
             const auto netmask{station["netmask"]};
-            if (not netmask.is<ArduinoJson::JsonArray>() || netmask.size() != cfg.station.netmask.size())
-            {
-                cfg.station.netmask = defaultCfg.station.netmask;
-            }
-            else
+            if (netmask.is<ArduinoJson::JsonArray>() and netmask.size() == cfg.station.netmask.size())
             {
                 for (auto i{0}; i < cfg.station.netmask.size(); ++i)
                 {
@@ -350,11 +343,7 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         }
         {
             const auto gateway{station["gateway"]};
-            if (not gateway.is<ArduinoJson::JsonArray>() || gateway.size() != cfg.station.gateway.size())
-            {
-                cfg.station.gateway = defaultCfg.station.gateway;
-            }
-            else
+            if (gateway.is<ArduinoJson::JsonArray>() and gateway.size() == cfg.station.gateway.size())
             {
                 for (auto i{0}; i < cfg.station.gateway.size(); ++i)
                 {
@@ -364,33 +353,21 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         }
         {
             const auto port{station["port"]};
-            if (not port.is<uint16_t>())
-            {
-                cfg.station.port = defaultCfg.station.port;
-            }
-            else
+            if (port.is<uint16_t>())
             {
                 cfg.station.port = port.as<uint16_t>();
             }
         }
         {
             const auto user{station["user"]};
-            if (not user.is<std::string>())
-            {
-                cfg.station.user = defaultCfg.station.user;
-            }
-            else
+            if (user.is<std::string>())
             {
                 cfg.station.user = user.as<std::string>();
             }
         }
         {
             const auto password{station["password"]};
-            if (not password.is<std::string>())
-            {
-                cfg.station.password = defaultCfg.station.password;
-            }
-            else
+            if (password.is<std::string>())
             {
                 cfg.station.password = password.as<std::string>();
             }
@@ -400,22 +377,14 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         const auto autoSleepWakeUp{json["auto_sleep_wakeup"]};
         {
             const auto enabled{autoSleepWakeUp["enabled"]};
-            if (not enabled.is<bool>())
-            {
-                cfg.autoSleepWakeUp.enabled = defaultCfg.autoSleepWakeUp.enabled;
-            }
-            else
+            if (enabled.is<bool>())
             {
                 cfg.autoSleepWakeUp.enabled = enabled.as<bool>();
             }
         }
         {
             const auto sleepTime{autoSleepWakeUp["sleep_time"]};
-            if (not sleepTime.is<ArduinoJson::JsonArray>() || sleepTime.size() != cfg.autoSleepWakeUp.sleepTime.size())
-            {
-                cfg.autoSleepWakeUp.sleepTime = defaultCfg.autoSleepWakeUp.sleepTime;
-            }
-            else
+            if (sleepTime.is<ArduinoJson::JsonArray>() and sleepTime.size() == cfg.autoSleepWakeUp.sleepTime.size())
             {
                 for (auto i{0}; i < cfg.autoSleepWakeUp.sleepTime.size(); ++i)
                 {
@@ -425,11 +394,7 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         }
         {
             const auto wakeUpTime{autoSleepWakeUp["wakeup_time"]};
-            if (not wakeUpTime.is<ArduinoJson::JsonArray>() || wakeUpTime.size() != cfg.autoSleepWakeUp.wakeUpTime.size())
-            {
-                cfg.autoSleepWakeUp.wakeUpTime = defaultCfg.autoSleepWakeUp.wakeUpTime;
-            }
-            else
+            if (wakeUpTime.is<ArduinoJson::JsonArray>() and wakeUpTime.size() == cfg.autoSleepWakeUp.wakeUpTime.size())
             {
                 for (auto i{0}; i < cfg.autoSleepWakeUp.wakeUpTime.size(); ++i)
                 {
@@ -444,23 +409,74 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configurat
         for (auto i{0}; i < cfg.sensors.size(); ++i)
         {
             const auto sensor{sensors[i]};
-
-            cfg.sensors[i].enabled = sensor["enabled"] | defaultCfg.sensors[i].enabled;
-            cfg.sensors[i].name = sensor["name"] | defaultCfg.sensors[i].name;
-            cfg.sensors[i].type = static_cast<Configuration::Sensor::Type>(sensor["type"] | static_cast<int16_t>(defaultCfg.sensors[i].type));
-            cfg.sensors[i].min = sensor["min"] | defaultCfg.sensors[i].min;
-            cfg.sensors[i].max = sensor["max"] | defaultCfg.sensors[i].max;
+            {
+                const auto enabled{ sensor["enabled"] };
+                if(enabled.is<bool>())
+                {
+                    cfg.sensors[i].enabled = enabled.as<bool>();
+                }
+            }
+            {
+                const auto name{ sensor["name"] };
+                if(name.is<std::string>())
+                {
+                    cfg.sensors[i].name = name.as<std::string>();
+                }
+            }
+            {
+                const auto type{ sensor["type"] };
+                if(type.is<int16_t>())
+                {
+                    cfg.sensors[i].type = static_cast<Configuration::Sensor::Type>(type.as<int16_t>());
+                }
+            }
+            {
+                const auto min{ sensor["min"] };
+                if(min.is<double>())
+                {
+                    cfg.sensors[i].min = min.as<double>();
+                }
+            }
+            {
+                const auto max{ sensor["max"] };
+                if(max.is<double>())
+                {
+                    cfg.sensors[i].max = max.as<double>();
+                }
+            }
             {
                 const auto calibration{ sensor["calibration"] };
-
-                cfg.sensors[i].calibration.factor = calibration["factor"] | defaultCfg.sensors[i].calibration.factor;
-                cfg.sensors[i].calibration.offset = calibration["offset"] | defaultCfg.sensors[i].calibration.offset;
+                {
+                    const auto factor{ calibration["factor"] };
+                    if(factor.is<double>())
+                    {
+                        cfg.sensors[i].calibration.factor = factor.as<double>();
+                    }
+                }
+                {
+                    const auto offset{ calibration["offset"] };
+                    if(offset.is<double>())
+                    {
+                        cfg.sensors[i].calibration.offset = offset.as<double>();
+                    }
+                }
             }
             {
                 const auto alarm{ sensor["alarm"] };
-
-                cfg.sensors[i].alarm.enabled = alarm["enabled"] | defaultCfg.sensors[i].alarm.enabled;
-                cfg.sensors[i].alarm.value = alarm["value"] | defaultCfg.sensors[i].alarm.enabled;
+                {
+                    const auto enabled{ alarm["enabled"] };
+                    if(enabled.is<bool>())
+                    {
+                        cfg.sensors[i].alarm.enabled = enabled.as<bool>();
+                    }
+                }
+                {
+                    const auto value{ alarm["value"] };
+                    if(value.is<double>())
+                    {
+                        cfg.sensors[i].alarm.value = value.as<double>();
+                    }
+                }
             }
         }
     }
@@ -470,12 +486,11 @@ auto Configuration::load(Configuration* cfg) -> void
 {
     log_d("begin");
 
-    auto valid{true};
+    *cfg = defaultCfg;
 
     if (not SD.exists("/configuration.json"))
     {
         log_d("file not found");
-        valid = false;
     }
     else
     {
@@ -484,7 +499,6 @@ auto Configuration::load(Configuration* cfg) -> void
         if (not file)
         {
             log_e("file error");
-            valid = false;
         }
         else
         {
@@ -495,7 +509,6 @@ auto Configuration::load(Configuration* cfg) -> void
             if (err != ArduinoJson::DeserializationError::Ok)
             {
                 log_d("json error = %s", err.c_str());
-                valid = false;
             }
             else
             {
@@ -503,11 +516,6 @@ auto Configuration::load(Configuration* cfg) -> void
                 Configuration::deserialize(json, *cfg);
             }
         }
-    }
-
-    if (not valid)
-    {
-        *cfg = defaultCfg;
     }
 
     Configuration::save(*cfg);

@@ -19,7 +19,7 @@
   <form id="configuration" readonly>
     <fieldset>
       <legend>Access Point</legend>
-      <table>
+      <table id="access_point">
         <tr>
           <td> <label for="access_point_enabled">Enabled</label> </td>
           <td> <input type="checkbox" id="access_point_enabled"> </td>
@@ -60,7 +60,7 @@
     </fieldset>
     <fieldset>
       <legend>Station</legend>
-      <table>
+      <table id="station">
         <tr>
           <td> <label for="station_enabled">Enabled</label> </td>
           <td> <input type="checkbox" id="station_enabled"> </td>
@@ -97,7 +97,7 @@
     </fieldset>
     <fieldset>
       <legend>Auto Sleep & WakeUp</legend>
-      <table>
+      <table id="auto_sleep_wakeup">
         <tr>
           <td> <label for="auto_sleep_wakeup_enabled">Enabled</label> </td>
           <td> <input type="checkbox" id="auto_sleep_wakeup_enabled"> </td>
@@ -110,6 +110,79 @@
           <td> <label for="auto_sleep_wakeup_wakeup_time">WakeUp Time</label> </td>
           <td> <input type="time" id="auto_sleep_wakeup_wakeup_time" required> </td>
         </tr>
+      </table>
+    </fieldset>
+    <fieldset>
+      <legend>Sensors</legend>
+      <table id="sensors">
+        <thead>
+          <tr>
+            <th rowspan="2"> N </th>
+            <th rowspan="2"> Enabled </th>
+            <th rowspan="2"> Name </th>
+            <th rowspan="2"> Type </th>
+            <th rowspan="2"> Min </th>
+            <th rowspan="2"> Max </th>
+            <th rowspan="1" colspan="2"> Calibration </th>
+            <th rowspan="1" colspan="2"> Alarm </th>
+          </tr>
+          <tr>
+            <th> Factor </th>
+            <th> Offset </th>
+            <th> Enabled </th>
+            <th> Value </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <label for="sensors_index">N</label>
+              <input type="number" id="sensors_index" readonly value="2">
+            </td>
+            <td>
+              <label for="sensors_enabled">Enabled</label>
+              <input type="checkbox" id="sensors_enabled" required>
+            </td>
+            <td>
+              <label for="sensors_name">Name</label>
+              <input type="text" id="sensors_name" required>
+            </td>
+            <td>
+              <label for="sensors_type">Type</label>
+              <select id="sensors_type" required>
+                <option disabled selected value hidden></option>
+                <option value="0">MPX5050</option>
+                <option value="1">MPX5100</option>
+                <option value="2">MPX5500</option>
+                <option value="3">MPX5700</option>
+              </select>
+            </td>
+            <td>
+              <label for="sensors_min">Min</label>
+              <input type="number" id="sensors_min" required>
+            </td>
+            <td>
+              <label for="sensors_max">Max</label>
+              <input type="number" id="sensors_max" required>
+            </td>
+            <td>
+              <label for="sensors_calibration_factor">Factor</label>
+              <input type="number" id="sensors_calibration_factor" required>
+            </td>
+            <td>
+              <label for="sensors_calibration_offset">Offset</label>
+              <input type="number" id="sensors_calibration_offset" required>
+            </td>
+            <td>
+              <label for="sensors_alarm_enabled">Enabled</label>
+              <input type="checkbox" id="sensors_alarm_enabled" required>
+            </td>
+            <td>
+              <label for="sensors_alarm_value">Value</label>
+              <input type="number" id="sensors_alarm_value" required>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </fieldset>
     <input type="submit">

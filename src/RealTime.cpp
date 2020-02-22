@@ -141,12 +141,14 @@ namespace RealTime
         configureAlarms();
         syncDateTime();
 
+        log_d("now = %s",RealTime::dateTimeToString(std::chrono::system_clock::now()).data());
+
         log_d("end");
         alarmFuture = std::async(std::launch::async, alarmTask);
         syncFuture = std::async(std::launch::async, syncTask);
     }
 
-    auto adjustDateTime(const std::chrono::system_clock::time_point &timePoint) -> void
+    auto adjustDateTime(const std::chrono::system_clock::time_point& timePoint) -> void
     {
         std::lock_guard<std::mutex> lock{mutex};
 
@@ -158,7 +160,7 @@ namespace RealTime
         rtc.SetDateTime(rtcDateTime);
     }
 
-    auto stringToDateTime(const std::string &str) -> std::chrono::system_clock::time_point
+    auto stringToDateTime(const std::string& str) -> std::chrono::system_clock::time_point
     {
         auto stream{std::istringstream{str}};
         auto time{std::tm{}};
@@ -166,7 +168,7 @@ namespace RealTime
         return std::chrono::system_clock::from_time_t(std::mktime(&time));
     }
 
-    auto dateTimeToString(const std::chrono::system_clock::time_point &timePoint) -> std::string
+    auto dateTimeToString(const std::chrono::system_clock::time_point& timePoint) -> std::string
     {
         auto stream{std::ostringstream{}};
         auto time{std::chrono::system_clock::to_time_t(timePoint)};
@@ -174,7 +176,7 @@ namespace RealTime
         return stream.str();
     }
 
-    auto stringToDateTimeHttp(const std::string &str) -> std::chrono::system_clock::time_point
+    auto stringToDateTimeHttp(const std::string& str) -> std::chrono::system_clock::time_point
     {
         auto stream{std::istringstream{str}};
         auto time{std::tm{}};
@@ -182,7 +184,7 @@ namespace RealTime
         return std::chrono::system_clock::from_time_t(std::mktime(&time));
     }
 
-    auto dateTimeToStringHttp(const std::chrono::system_clock::time_point &timePoint) -> std::string
+    auto dateTimeToStringHttp(const std::chrono::system_clock::time_point& timePoint) -> std::string
     {
         auto stream{std::ostringstream{}};
         auto time{std::chrono::system_clock::to_time_t(timePoint)};
@@ -198,4 +200,20 @@ namespace RealTime
         stream >> std::get_time(&time, "%b %d %Y %H:%M:%S");
         return std::chrono::system_clock::from_time_t(std::mktime(&time));
     }
+
+    auto ceil(const std::chrono::system_clock::time_point& timePoint, const std::chrono::seconds& duration) -> std::chrono::system_clock::time_point
+    {
+        return std::chrono::system_clock::from_time_t(((std::chrono::system_clock::to_time_t(timePoint) + duration.count() - 1 ) / duration.count() ) * duration.count());
+    }
+
+    auto floor(const std::chrono::system_clock::time_point& timePoint, const std::chrono::seconds& duration) -> std::chrono::system_clock::time_point
+    {
+        return std::chrono::system_clock::from_time_t((std::chrono::system_clock::to_time_t(timePoint) / duration.count() ) * duration.count());
+    }
+
+    auto round(const std::chrono::system_clock::time_point& timePoint, const std::chrono::seconds& duration) -> std::chrono::system_clock::time_point
+    {
+        return std::chrono::system_clock::from_time_t(((std::chrono::system_clock::to_time_t(timePoint) + duration.count() / 2 ) / duration.count() ) * duration.count());
+    }
+
 } // namespace RealTime

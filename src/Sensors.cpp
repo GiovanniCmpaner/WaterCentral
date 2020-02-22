@@ -7,6 +7,7 @@
 #include <thread>
 #include <Wire.h>
 #include <BME280I2C.h>
+#include <esp_pthread.h>
 
 #include "Configuration.hpp"
 #include "Display.hpp"
@@ -114,10 +115,10 @@ namespace Sensors
             infos[n].future = std::async(std::launch::async, infoTask, n);
         }
 
-        BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
-        BME280::PresUnit presUnit(BME280::PresUnit_Pa);
-
-        float temp(NAN), hum(NAN), pres(NAN);
-        bme.read(pres, temp, hum, tempUnit, presUnit);
+        //BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
+        //BME280::PresUnit presUnit(BME280::PresUnit_Pa);
+//
+        //float temp(NAN), hum(NAN), pres(NAN);
+        //bme.read(pres, temp, hum, tempUnit, presUnit);
     }
 } // namespace Sensors
