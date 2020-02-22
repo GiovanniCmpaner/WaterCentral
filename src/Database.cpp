@@ -12,11 +12,40 @@
 #include "Database.hpp"
 #include "Peripherals.hpp"
 #include "RealTime.hpp"
-#include "SensorData.hpp"
 
 namespace Database
 {
-    static auto db{(sqlite3 *){}};
+    static auto db
+    {
+        (sqlite3*) {}
+    };
+
+    auto SensorData::serialize(ArduinoJson::JsonVariant& json, const SensorData& sensorData) -> void
+    {
+        json["id"] = sensorData.id;
+        json["dateTime"] = RealTime::dateTimeToString(std::chrono::system_clock::from_time_t(sensorData.dateTime));
+        json["temperature"] = sensorData.temperature;
+        json["humidity"] = sensorData.humidity;
+        json["pressure"] = sensorData.pressure;
+        for (auto n : sensorData.sensors)
+        {
+            json["sensors"].add(n);
+        }
+    }
+
+    auto SensorData::get() -> SensorData
+    {
+        auto sensorData{SensorData{}};
+        sensorData.dateTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        sensorData.temperature = 1.234;
+        sensorData.humidity = 1.234;
+        sensorData.pressure = 1.234;
+        sensorData.sensors[0] = 1.234;
+        sensorData.sensors[1] = 1.234;
+        sensorData.sensors[2] = 1.234;
+        sensorData.sensors[3] = 1.234;
+        return sensorData;
+    }
 
     static auto createTable() -> void
     {
@@ -56,12 +85,13 @@ namespace Database
         log_d("end");
     }
 
-    static auto insertSensorData(const SensorData &sensorData) -> int64_t
+    static auto insertSensorData(const SensorData& sensorData) -> int64_t
     {
         auto id{int64_t{}};
         log_d("begin");
 
-        const auto query{
+        const auto query
+        {
             "INSERT INTO SENSORS_DATA ( "
             "    DATE_TIME,             "
             "    TEMPERATURE,           "
@@ -75,14 +105,15 @@ namespace Database
             "VALUES                     "
             "    (?,?,?,?,?,?,?,?)     "};
 
-        auto res{(sqlite3_stmt *){}};
+        auto res{(sqlite3_stmt*) {}};
         const auto rc{sqlite3_prepare_v2(db, query, strlen(query), &res, nullptr)};
         if (rc != SQLITE_OK)
         {
             log_d("insert prepare error: %s", sqlite3_errmsg(db));
             //std::abort();
         }
-        else {
+        else
+        {
             sqlite3_bind_int64(res, 1, sensorData.dateTime);
             sqlite3_bind_double(res, 2, sensorData.temperature);
             sqlite3_bind_double(res, 3, sensorData.humidity);
@@ -166,15 +197,16 @@ namespace Database
     }
 
     auto getSensorsData(
-        std::function<void(const SensorData&)> callback, 
-        int64_t id, 
-        std::chrono::system_clock::time_point start, 
+        std::function<void(const SensorData&)> callback,
+        int64_t id,
+        std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end
     ) -> void
     {
         log_d("begin");
 
-        const auto query{
+        const auto query
+        {
             "SELECT                                       "
             "    ID,                                      "
             "    DATE_TIME,                               "
@@ -183,8 +215,7 @@ namespace Database
             "    PRESSURE,                                "
             "    SENSOR_1,                                "
             "    SENSOR_2,                                "
-            "    SENSOR_3,                                "
-            "    SENSOR_4                                 "
+            "    SENSOR_3                                 "
             "FROM                                         "
             "    SENSORS_DATA                             "
             "WHERE                                        "
@@ -193,7 +224,7 @@ namespace Database
             "    AND ( DATE_TIME <= IFNULL(?,DATE_TIME) ) "
             "LIMIT 20                                     "};
 
-        auto res{(sqlite3_stmt *){}};
+        auto res{(sqlite3_stmt*) {}};
         const auto rc{sqlite3_prepare_v2(db, query, strlen(query), &res, nullptr)};
         if (rc != SQLITE_OK)
         {
@@ -225,7 +256,6 @@ namespace Database
             sensorData.sensors[0] = sqlite3_column_double(res, 5);
             sensorData.sensors[1] = sqlite3_column_double(res, 6);
             sensorData.sensors[2] = sqlite3_column_double(res, 7);
-            sensorData.sensors[3] = sqlite3_column_double(res, 8);
             callback(sensorData);
         }
         sqlite3_finalize(res);

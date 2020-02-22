@@ -10,6 +10,7 @@
 #include "RealTime.hpp"
 #include "WebInterface.hpp"
 #include "Display.hpp"
+#include "Sensors.hpp"
 
 void setup()
 {
@@ -29,6 +30,7 @@ void setup()
 
     digitalWrite(Peripherals::PRF_CTL,LOW);
     Display::init();
+    Sensors::init();
 
     log_d("end");
 }

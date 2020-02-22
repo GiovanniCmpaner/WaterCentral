@@ -22,100 +22,118 @@ extern const uint8_t configuration_html_end[] asm("_binary_html_configuration_ht
 
 namespace WebInterface
 {
-    static auto server{std::unique_ptr<AsyncWebServer>{}};
-
-    static auto getProgmem(AsyncWebServerRequest *request, const std::string& contentType, const uint8_t *content, size_t len) -> void
+    static auto server
     {
-        const auto lastModified{RealTime::compiledDateTime()};
-        auto ifModifiedSince{std::chrono::system_clock::time_point::min()};
+        std::unique_ptr<AsyncWebServer> {}
+    };
 
-        if (request->hasHeader("If-Modified-Since"))
+    namespace Get
+    {
+        static auto handleProgmem(AsyncWebServerRequest* request, const std::string& contentType, const uint8_t* content, size_t len) -> void
         {
-            ifModifiedSince = RealTime::stringToDateTimeHttp(request->getHeader("If-Modified-Since")->value().c_str());
+            const auto lastModified{RealTime::compiledDateTime()};
+            auto ifModifiedSince{std::chrono::system_clock::time_point::min()};
+
+            if (request->hasHeader("If-Modified-Since"))
+            {
+                ifModifiedSince = RealTime::stringToDateTimeHttp(request->getHeader("If-Modified-Since")->value().c_str());
+            }
+
+            auto response{lastModified <= ifModifiedSince ? request->beginResponse(304) : request->beginResponse_P(200, contentType.data(), content, len)};
+            response->addHeader("Last-Modified", RealTime::dateTimeToStringHttp(lastModified).data());
+            response->addHeader("Date", RealTime::dateTimeToStringHttp(std::chrono::system_clock::now()).data());
+            response->addHeader("Cache-Control", "public, max-age=0");
+            request->send(response);
         }
 
-        auto response{lastModified <= ifModifiedSince ? request->beginResponse(304) : request->beginResponse_P(200, contentType.data(), content, len)};
-        response->addHeader("Last-Modified", RealTime::dateTimeToStringHttp(lastModified).data());
-        response->addHeader("Date", RealTime::dateTimeToStringHttp(std::chrono::system_clock::now()).data());
-        response->addHeader("Cache-Control", "public, max-age=0");
-        request->send(response);
-    }
-
-    static auto getConfiguration(AsyncWebServerRequest *request) -> void
-    {
-        auto response{new AsyncJsonResponse{false, 2048}};
-        auto responseJson{response->getRoot()};
-
-        Configuration::serialize(responseJson, cfg);
-
-        response->setLength();
-        request->send(response);
-    }
-
-    static auto setConfiguration(AsyncWebServerRequest *request, JsonVariant &requestJson) -> void
-    {
-        Configuration::deserialize(requestJson, cfg);
-        Configuration::save(cfg);
-        request->send(204);
-    }
-
-    static auto getDateTime(AsyncWebServerRequest *request) -> void
-    {
-        auto response{new AsyncJsonResponse{}};
-        auto responseJson{response->getRoot()};
-
-        const auto str{RealTime::dateTimeToString(std::chrono::system_clock::now())};
-        responseJson["date_time"] = str;
-
-        response->setLength();
-        request->send(response);
-    }
-
-    static auto setDateTime(AsyncWebServerRequest *request, JsonVariant &requestJson) -> void
-    {
-        auto requestObj{requestJson.as<JsonObject>()};
-
-        const auto dateTime{RealTime::stringToDateTime(requestObj["date_time"])};
-        RealTime::adjustDateTime(dateTime);
-
-        request->send(204);
-    }
-
-    static auto getSensorsData(AsyncWebServerRequest *request) -> void
-    {
-        auto response{new AsyncJsonResponse{true, 4096}};
-        auto responseJson{response->getRoot()};
-
-        auto id{int64_t{}};
-        auto start{std::chrono::system_clock::time_point::min()};
-        auto end{std::chrono::system_clock::time_point::max()};
-
-        if (request->hasParam("id"))
+        static auto handleConfigurationJson(AsyncWebServerRequest* request) -> void
         {
-            id = request->getParam("id")->value().toInt();
+            auto response{new AsyncJsonResponse{false, 2048}};
+            auto responseJson{response->getRoot()};
+
+            Configuration::serialize(responseJson, cfg);
+
+            response->setLength();
+            request->send(response);
         }
-        if (request->hasParam("start"))
+        static auto handleSensorsDataJson(AsyncWebServerRequest* request) -> void
         {
-            start = RealTime::stringToDateTime(request->getParam("start")->value().c_str());
-        }
-        if (request->hasParam("end"))
-        {
-            end = RealTime::stringToDateTime(request->getParam("end")->value().c_str());
+            auto response{new AsyncJsonResponse{true, 4096}};
+            auto responseJson{response->getRoot()};
+
+            auto id{int64_t{}};
+            auto start{std::chrono::system_clock::time_point::min()};
+            auto end{std::chrono::system_clock::time_point::max()};
+
+            if (request->hasParam("id"))
+            {
+                id = request->getParam("id")->value().toInt();
+            }
+            if (request->hasParam("start"))
+            {
+                start = RealTime::stringToDateTime(request->getParam("start")->value().c_str());
+            }
+            if (request->hasParam("end"))
+            {
+                end = RealTime::stringToDateTime(request->getParam("end")->value().c_str());
+            }
+
+            log_d("id = %ld", id);
+            log_d("start = %s", RealTime::dateTimeToString(start).data());
+            log_d("end = %s", RealTime::dateTimeToString(end).data());
+
+            Database::getSensorsData([&](const Database::SensorData &sensorData)
+            {
+                auto element{responseJson.addElement()};
+                Database::SensorData::serialize(element, sensorData);
+            },id, start, end);
+
+            response->setLength();
+            request->send(response);
         }
 
-        log_d("id = %ld", id);
-        log_d("start = %s", RealTime::dateTimeToString(start).data());
-        log_d("end = %s", RealTime::dateTimeToString(end).data());
+        static auto handleConfigurationHtml(AsyncWebServerRequest* request) -> void
+        {
+            handleProgmem(request,"text/html", configuration_html_start, static_cast<size_t>(configuration_html_end - configuration_html_start));
+        }
 
-        Database::getSensorsData([&](const SensorData &sensorData) {
-            auto element{responseJson.addElement()};
-            SensorData::serialize(element, sensorData);
-        },
-                                 id, start, end);
+        static auto handleJqueryJs(AsyncWebServerRequest* request) -> void
+        {
+            handleProgmem(request,"application/javascript", jquery_min_js_start, static_cast<size_t>(jquery_min_js_end - jquery_min_js_start));
+        }
 
-        response->setLength();
-        request->send(response);
-    }
+        static auto handleDateTimeJson(AsyncWebServerRequest* request) -> void
+        {
+            auto response{new AsyncJsonResponse{}};
+            auto responseJson{response->getRoot()};
+
+            const auto str{RealTime::dateTimeToString(std::chrono::system_clock::now())};
+            responseJson["date_time"] = str;
+
+            response->setLength();
+            request->send(response);
+        }
+    } // namespace Get
+
+    namespace Post
+    {
+        static auto handleConfigurationJson(AsyncWebServerRequest* request, JsonVariant& requestJson) -> void
+        {
+            Configuration::deserialize(requestJson, cfg);
+            Configuration::save(cfg);
+            request->send(204);
+        }
+
+        static auto handleDateTimeJson(AsyncWebServerRequest* request, JsonVariant& requestJson) -> void
+        {
+            auto requestObj{requestJson.as<JsonObject>()};
+
+            const auto dateTime{RealTime::stringToDateTime(requestObj["date_time"])};
+            RealTime::adjustDateTime(dateTime);
+
+            request->send(204);
+        }
+    } // namespace Post
 
     static auto configureServer() -> void
     {
@@ -132,22 +150,23 @@ namespace WebInterface
 
         if (server)
         {
-            server->on("/configuration.json", HTTP_GET, getConfiguration);
-            server->addHandler(new AsyncCallbackJsonWebHandler("/configuration.json", setConfiguration));
+            server->on("/configuration.json", HTTP_GET, Get::handleConfigurationJson);
+            server->addHandler(new AsyncCallbackJsonWebHandler("/configuration.json", Post::handleConfigurationJson));
 
-            server->on("/date_time.json", HTTP_GET, getDateTime);
-            server->addHandler(new AsyncCallbackJsonWebHandler("/date_time.json", setDateTime));
+            server->on("/date_time.json", HTTP_GET, Get::handleDateTimeJson);
+            server->addHandler(new AsyncCallbackJsonWebHandler("/date_time.json", Post::handleDateTimeJson));
 
-            server->on("/sensors_data.json", HTTP_GET, getSensorsData);
+            server->on("/sensors_data.json", HTTP_GET, Get::handleSensorsDataJson);
 
-            server->on("/configuration.html", HTTP_GET, std::bind(getProgmem,std::placeholders::_1, "text/html", configuration_html_start, static_cast<size_t>(configuration_html_end - configuration_html_start)));
-            server->on("/jquery.min.js", HTTP_GET, std::bind(getProgmem,std::placeholders::_1, "application/javascript", jquery_min_js_start, static_cast<size_t>(jquery_min_js_end - jquery_min_js_start)));
+            server->on("/configuration.html", HTTP_GET, Get::handleConfigurationHtml);
+            server->on("/jquery.min.js", HTTP_GET, Get::handleJqueryJs);
 
             DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
             DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
             DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
             DefaultHeaders::Instance().addHeader("Access-Control-Max-Age", "86400");
-            server->onNotFound([](AsyncWebServerRequest *request) {
+            server->onNotFound([](AsyncWebServerRequest *request)
+            {
                 if (request->method() == HTTP_OPTIONS)
                 {
                     request->send(200);

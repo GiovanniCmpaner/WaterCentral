@@ -12,30 +12,87 @@
 #include "Configuration.hpp"
 #include "Peripherals.hpp"
 
-static const auto defaultCfg{Configuration{
-    {true,
-     {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED},
-     {192, 168, 1, 200},
-     {255, 255, 255, 0},
-     {192, 168, 1, 1},
-     80,
-     "WORKGROUP",
-     "49WNN7F3CD@22"},
-    {true,
-     {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED},
-     {192, 168, 1, 200},
-     {255, 255, 255, 0},
-     {192, 168, 1, 1},
-     80,
-     "WaterCentral",
-     "W@t3rC3ntr4l",
-     30},
-    {true,
-     {22, 0},
-     {8, 0}}}};
+static const Configuration defaultCfg
+{
+    {
+        true,
+        {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED},
+        {192, 168, 1, 200},
+        {255, 255, 255, 0},
+        {192, 168, 1, 1},
+        80,
+        "WORKGROUP",
+        "49WNN7F3CD@22"
+    },
+    {
+        true,
+        {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED},
+        {192, 168, 1, 200},
+        {255, 255, 255, 0},
+        {192, 168, 1, 1},
+        80,
+        "WaterCentral",
+        "W@t3rC3ntr4l",
+        30
+    },
+    {
+        true,
+        {22, 0},
+        {8, 0}
+    },
+    {
+        {
+            {
+                true,
+                "Test1",
+                Configuration::Sensor::Type::MPX5050,
+                10.0,
+                50.0,
+                {
+                    0.0,
+                    1.0
+                },
+                {
+                    true,
+                    25.0
+                }
+            },
+            {
+                true,
+                "Test2",
+                Configuration::Sensor::Type::MPX5050,
+                10.0,
+                50.0,
+                {
+                    1.0,
+                    0.0
+                },
+                {
+                    true,
+                    25.0
+                }
+            },
+            {
+                true,
+                "Test3",
+                Configuration::Sensor::Type::MPX5050,
+                10.0,
+                50.0,
+                {
+                    1.0,
+                    0.0
+                },
+                {
+                    true,
+                    25.0
+                }
+            }
+        }
+    }
+};
 
-static auto stationMAC{std::array<uint8_t, 6>{}};
-static auto accessPointMAC{std::array<uint8_t, 6>{}};
+static std::array<uint8_t, 6> stationMAC{};
+static std::array<uint8_t, 6> accessPointMAC{};
 
 auto Configuration::init() -> void
 {
@@ -49,7 +106,7 @@ auto Configuration::init() -> void
     log_d("end");
 }
 
-auto Configuration::serialize(ArduinoJson::JsonVariant &json, const Configuration &cfg) -> void
+auto Configuration::serialize(ArduinoJson::JsonVariant& json, const Configuration& cfg) -> void
 {
     {
         auto accessPoint{json["access_point"]};
@@ -113,9 +170,35 @@ auto Configuration::serialize(ArduinoJson::JsonVariant &json, const Configuratio
             autoSleepWakeUp["wakeup_time"].add(n);
         }
     }
+    {
+        auto sensors{json["sensors"]};
+
+        for(auto& s : cfg.sensors)
+        {
+            auto sensor{ sensors.addElement() };
+
+            sensor["enabled"] = s.enabled;
+            sensor["name"] = s.name;
+            sensor["type"] = static_cast<int16_t>(s.type);
+            sensor["min"] = s.min;
+            sensor["max"] = s.max;
+            {
+                auto calibration{ sensor["calibration"] };
+
+                calibration["factor"] = s.calibration.factor;
+                calibration["offset"] = s.calibration.offset;
+            }
+            {
+                auto alarm{ sensor["alarm"] };
+
+                alarm["enabled"] = s.alarm.enabled;
+                alarm["value"] = s.alarm.value;
+            }
+        }
+    }
 }
 
-auto Configuration::deserialize(const ArduinoJson::JsonVariant &json, Configuration &cfg) -> void
+auto Configuration::deserialize(const ArduinoJson::JsonVariant& json, Configuration& cfg) -> void
 {
     {
         const auto accessPoint{json["access_point"]};
@@ -315,8 +398,17 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant &json, Configurat
     }
     {
         const auto autoSleepWakeUp{json["auto_sleep_wakeup"]};
-
-        cfg.autoSleepWakeUp.enabled = autoSleepWakeUp["enabled"].as<bool>();
+        {
+            const auto enabled{autoSleepWakeUp["enabled"]};
+            if (not enabled.is<bool>())
+            {
+                cfg.autoSleepWakeUp.enabled = defaultCfg.autoSleepWakeUp.enabled;
+            }
+            else
+            {
+                cfg.autoSleepWakeUp.enabled = enabled.as<bool>();
+            }
+        }
         {
             const auto sleepTime{autoSleepWakeUp["sleep_time"]};
             if (not sleepTime.is<ArduinoJson::JsonArray>() || sleepTime.size() != cfg.autoSleepWakeUp.sleepTime.size())
@@ -346,9 +438,35 @@ auto Configuration::deserialize(const ArduinoJson::JsonVariant &json, Configurat
             }
         }
     }
+    {
+        const auto sensors{json["sensors"]};
+
+        for (auto i{0}; i < cfg.sensors.size(); ++i)
+        {
+            const auto sensor{sensors[i]};
+
+            cfg.sensors[i].enabled = sensor["enabled"] | defaultCfg.sensors[i].enabled;
+            cfg.sensors[i].name = sensor["name"] | defaultCfg.sensors[i].name;
+            cfg.sensors[i].type = static_cast<Configuration::Sensor::Type>(sensor["type"] | static_cast<int16_t>(defaultCfg.sensors[i].type));
+            cfg.sensors[i].min = sensor["min"] | defaultCfg.sensors[i].min;
+            cfg.sensors[i].max = sensor["max"] | defaultCfg.sensors[i].max;
+            {
+                const auto calibration{ sensor["calibration"] };
+
+                cfg.sensors[i].calibration.factor = calibration["factor"] | defaultCfg.sensors[i].calibration.factor;
+                cfg.sensors[i].calibration.offset = calibration["offset"] | defaultCfg.sensors[i].calibration.offset;
+            }
+            {
+                const auto alarm{ sensor["alarm"] };
+
+                cfg.sensors[i].alarm.enabled = alarm["enabled"] | defaultCfg.sensors[i].alarm.enabled;
+                cfg.sensors[i].alarm.value = alarm["value"] | defaultCfg.sensors[i].alarm.enabled;
+            }
+        }
+    }
 }
 
-auto Configuration::load(Configuration *cfg) -> void
+auto Configuration::load(Configuration* cfg) -> void
 {
     log_d("begin");
 
@@ -370,7 +488,7 @@ auto Configuration::load(Configuration *cfg) -> void
         }
         else
         {
-            auto doc{ArduinoJson::DynamicJsonDocument{2048}};
+            auto doc{ArduinoJson::DynamicJsonDocument{3072}};
             auto err{ArduinoJson::deserializeJson(doc, file)};
             file.close();
 
@@ -397,7 +515,7 @@ auto Configuration::load(Configuration *cfg) -> void
     log_d("end");
 }
 
-auto Configuration::save(const Configuration &cfg) -> void
+auto Configuration::save(const Configuration& cfg) -> void
 {
     log_d("begin");
 
@@ -409,11 +527,10 @@ auto Configuration::save(const Configuration &cfg) -> void
         std::abort();
     }
 
-    auto doc{ArduinoJson::DynamicJsonDocument{2048}};
+    auto doc{ArduinoJson::DynamicJsonDocument{3072}};
     auto json{doc.as<ArduinoJson::JsonVariant>()};
 
     Configuration::serialize(json, cfg);
-    //json["hash"] = cfg.hash();
 
     ArduinoJson::serializeJsonPretty(doc, file);
     file.close();

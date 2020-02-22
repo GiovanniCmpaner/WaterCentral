@@ -92,12 +92,14 @@ auto LcdBarGraph::init() -> void
     lcd->createChar(endSlot, customChar);
 }
 
-auto LcdBarGraph::draw(uint8_t slot, uint8_t posCol, uint8_t posRow, uint8_t barLength, double percent) -> void
+auto LcdBarGraph::draw(uint8_t slot, int16_t posCol, int16_t posRow, int16_t barLength, double percent) -> void
 {
     if (barLength == 0)
     {
         return;
     }
+
+    percent = constrain(percent,-100,+200);
 
     auto barColumns{static_cast<int16_t>((barLength * 5 - 2) * (percent / 100.0))};
 
