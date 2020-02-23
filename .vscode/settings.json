@@ -51,6 +51,8 @@
         "atomic": "cpp",
         "condition_variable": "cpp",
         "ratio": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "forward_list": "cpp",
+        "valarray": "cpp"
     }
 }

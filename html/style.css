@@ -1,65 +1,84 @@
+/***************************************************/
+
 html {
-    font-family: Arial, Helvetica, sans-serif;
-  }
+  font-family: Arial, Helvetica, sans-serif;
+}
 
-  label {
+nav {
+  position: sticky;
+  top: 0;
+  padding: 0.5em;
+  background-color: #9e9e9e;
+  display: none;
+}
+
+table { 
+  min-width: 22em;
+}
+
+td {
+  padding: 0.2em;
+}
+
+span {
+  text-align: center;
+}
+
+table label {
+  display: inline-block;
+  width: 4.5em;
+}
+
+table input, table select, table span {
+  display: inline-block;
+  width: 9em;
+}
+
+/***************************************************/
+
+.info {
+  color: #00529B;
+  background-color: #BDE5F8;
+}
+
+.success {
+  color: #4F8A10;
+  background-color: #DFF2BF;
+}
+
+.warning {
+  color: #9F6000;
+  background-color: #FEEFB3;
+}
+
+.error {
+  color: #D8000C;
+  background-color: #FFD2D2;
+}
+
+/***************************************************/
+
+.responsive label {
+  display: none;
+}
+
+@media (max-width: 30em) {
+  .responsive thead {
+    display: none;
+  }
+  .responsive tbody th {
+    text-align: left;
+  }
+  .responsive label, .responsive tr, .responsive td {
     display: inline-block;
-    width: 7em;
   }
-
-  input, select {
-    width: 10em;
+  .responsive tr:not(:first-child){
+    padding-top: 1em;
   }
-
-  nav {
-    position: sticky;
-    top: 0;
-    padding: 0.5em;
-    background-color: #9e9e9e;
-    display: none;
+  .responsive tr:not(:last-child) {
+    padding-bottom: 1em;
+    border-bottom: 2px groove rgb(227, 227, 227);
   }
+}
 
-  #sensors {
-    border-spacing: 0.2em;
-  }  
-
-  
-  #sensors label {
-    display: none;
-  }
-
-  @media (max-width: 768px) {
-    #sensors th {
-      display: none;
-    }
-    #sensors input, #sensors label {
-      display: inline-block;
-    }  
-     #sensors tr, #sensors td {
-      display: block;
-    }
-  }
-
-  .info {
-    color: #00529B;
-    background-color: #BDE5F8;
-  }
-
-  .success {
-    color: #4F8A10;
-    background-color: #DFF2BF;
-  }
-
-  .warning {
-    color: #9F6000;
-    background-color: #FEEFB3;
-  }
-
-  .error {
-    color: #D8000C;
-    background-color: #FFD2D2;
-  }
-
-  body {
-    font-family: "Open Sans", sans-serif;
-  }
+/***************************************************/

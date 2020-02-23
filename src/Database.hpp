@@ -21,7 +21,7 @@ namespace Database
     };
 
     auto init() -> void;
-    auto getSensorsData( 
+    auto getData( 
         std::function<void ( const SensorData& ) > callback, 
         int64_t id = {}, 
         std::chrono::system_clock::time_point start = std::chrono::system_clock::time_point::min(), 

@@ -22,7 +22,7 @@ namespace Database
     auto SensorData::serialize(ArduinoJson::JsonVariant& json, const SensorData& sensorData) -> void
     {
         json["id"] = sensorData.id;
-        json["dateTime"] = RealTime::dateTimeToString(std::chrono::system_clock::from_time_t(sensorData.dateTime));
+        json["datetime"] = RealTime::dateTimeToString(std::chrono::system_clock::from_time_t(sensorData.dateTime));
         json["temperature"] = sensorData.temperature;
         json["humidity"] = sensorData.humidity;
         json["pressure"] = sensorData.pressure;
@@ -175,7 +175,7 @@ namespace Database
         future = std::async(std::launch::async, Database::insertTask);
     }
 
-    auto getSensorsData(
+    auto getData(
         std::function<void(const SensorData&)> callback,
         int64_t id,
         std::chrono::system_clock::time_point start,

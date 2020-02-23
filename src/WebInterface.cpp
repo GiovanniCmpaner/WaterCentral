@@ -5,6 +5,7 @@
 #include <WiFi.h>
 #include <chrono>
 #include <cstdlib>
+#include <cstdint>
 #include <esp_log.h>
 #include <functional>
 #include <memory>
@@ -67,7 +68,7 @@ namespace WebInterface
             request->send(response);
         }
 
-        static auto handleSensorsDataJson(AsyncWebServerRequest* request) -> void
+        static auto handleDataJson(AsyncWebServerRequest* request) -> void
         {
             auto response{new AsyncJsonResponse{true, 4096}};
             auto responseJson{response->getRoot()};
@@ -93,7 +94,7 @@ namespace WebInterface
             log_d("start = %s", RealTime::dateTimeToString(start).data());
             log_d("end = %s", RealTime::dateTimeToString(end).data());
 
-            Database::getSensorsData([&](const Database::SensorData &sensorData)
+            Database::getData([&](const Database::SensorData &sensorData)
             {
                 auto element{responseJson.addElement()};
                 Database::SensorData::serialize(element, sensorData);
@@ -108,8 +109,7 @@ namespace WebInterface
             auto response{new AsyncJsonResponse{}};
             auto responseJson{response->getRoot()};
 
-            const auto str{RealTime::dateTimeToString(std::chrono::system_clock::now())};
-            responseJson["date_time"] = str;
+            responseJson["datetime"] = RealTime::dateTimeToString(std::chrono::system_clock::now());
 
             response->setLength();
             request->send(response);
@@ -167,9 +167,7 @@ namespace WebInterface
 
         static auto handleDateTimeJson(AsyncWebServerRequest* request, JsonVariant& requestJson) -> void
         {
-            auto requestObj{requestJson.as<JsonObject>()};
-
-            const auto dateTime{RealTime::stringToDateTime(requestObj["date_time"])};
+            const auto dateTime{RealTime::stringToDateTime(requestJson["datetime"])};
             RealTime::adjustDateTime(dateTime);
 
             request->send(204);
@@ -192,8 +190,8 @@ namespace WebInterface
         if (server)
         {
             server->on("/configuration.json", HTTP_GET, Get::handleConfigurationJson);
-            server->on("/date_time.json", HTTP_GET, Get::handleDateTimeJson);
-            server->on("/sensors_data.json", HTTP_GET, Get::handleSensorsDataJson);
+            server->on("/datetime.json", HTTP_GET, Get::handleDateTimeJson);
+            server->on("/data.json", HTTP_GET, Get::handleDataJson);
             server->on("/configuration.html", HTTP_GET, Get::handleConfigurationHtml);
             server->on("/configuration.js", HTTP_GET, Get::handleConfigurationJs);
             server->on("/data.html", HTTP_GET, Get::handleDataHtml);
@@ -202,9 +200,9 @@ namespace WebInterface
             server->on("/sensors.html", HTTP_GET, Get::handleSensorsHtml);
             server->on("/sensors.js", HTTP_GET, Get::handleSensorsJs);
             server->on("/style.css", HTTP_GET, Get::handleStyleCss);
-            
+
             server->addHandler(new AsyncCallbackJsonWebHandler("/configuration.json", Post::handleConfigurationJson));
-            server->addHandler(new AsyncCallbackJsonWebHandler("/date_time.json", Post::handleDateTimeJson));
+            server->addHandler(new AsyncCallbackJsonWebHandler("/datetime.json", Post::handleDateTimeJson));
 
             DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
             DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");

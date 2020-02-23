@@ -44,7 +44,7 @@ function setConfiguration() {
         type: "POST",
         url: "http://192.168.1.200/configuration.json",
         contentType: 'application/json',
-        timeout: 3000,
+        timeout: 5000,
         data: JSON.stringify(data)
     })
         .done(() => {
@@ -64,7 +64,7 @@ function getConfiguration() {
         type: "GET",
         url: "http://192.168.1.200/configuration.json",
         accepts: 'application/json',
-        timeout: 3000
+        timeout: 5000
     })
         .done((data) => {
             $("#access_point_enabled").prop("checked", data.access_point.enabled);

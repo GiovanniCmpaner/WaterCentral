@@ -12,7 +12,92 @@
 </head>
 
 <body>
-
+  <nav id="message"></nav>
+  <h2> Data </h2>
+  <fieldset>
+    <legend> Filter </legend>
+    <form id="filter">
+      <table>
+        <tr>
+          <td>
+            <label for="filter_id"> ID </label>
+            <input type="number" id="filter_id" min="0">
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label for="filter_start_date"> Start </label>
+            <input type="date" id="filter_start_date">
+            <input type="time" id="filter_start_time" step="1">
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label for="filter_end_date" s> End </label>
+            <input type="date" id="filter_end_date">
+            <input type="time" id="filter_end_time" step="1">
+          </td>
+        </tr>
+      </table>
+      <input type="submit" value="Filter">
+      <input type="reset" value="Clear">
+    </form>
+  </fieldset>
+  <fieldset>
+    <legend> Result </legend>
+    <table class="responsive" id="result">
+      <thead>
+        <tr>
+          <th> ID </th>
+          <th> DateTime </th>
+          <th> Temperature </th>
+          <th> Humidity </th>
+          <th> Pressure </th>
+          <th> Sensor 1 </th>
+          <th> Sensor 2 </th>
+          <th> Sensor 3 </th>
+        </tr>
+      </thead>
+      <tbody>
+        <template id="data_template">
+          <tr>
+            <th>
+              <label for="data_id"> ID </label>
+              <span id="data_id"></span>
+            </th>
+            <td>
+              <label for="data_datetime"> DateTime </label>
+              <span id="data_datetime"></span>
+            </td>
+            <td>
+              <label for="data_temperature"> Temperature </label>
+              <span id="data_temperature"></span>
+            </td>
+            <td>
+              <label for="data_humidity"> Humidity </label>
+              <span id="data_humidity"></span>
+            </td>
+            <td>
+              <label for="data_pressure"> Pressure </label>
+              <span id="data_pressure"></span>
+            </td>
+            <td>
+              <label for="data_sensor_0"> Sensor 1 </label>
+              <span id="data_sensor_0"></span>
+            </td>
+            <td>
+              <label for="data_sensor_1"> Sensor 2 </label>
+              <span id="data_sensor_1"></span>
+            </td>
+            <td>
+              <label for="data_sensor_2"> Sensor 3 </label>
+              <span id="data_sensor_2"></span>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </fieldset>
 </body>
 
 </html>
