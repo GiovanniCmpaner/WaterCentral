@@ -10,6 +10,7 @@
 namespace Peripherals
 {
     static auto hspi{SPIClass{HSPI}};
+    std::mutex i2cMutex{};
 
     auto init() -> void
     {
@@ -21,7 +22,7 @@ namespace Peripherals
         pinMode(Peripherals::SD_CARD::SCK, OUTPUT);
         pinMode(Peripherals::BME280::SDA, INPUT_PULLUP);
         pinMode(Peripherals::BME280::SCL, INPUT_PULLUP);
-        pinMode(Peripherals::PAM8403::RIN, OUTPUT);
+        //pinMode(Peripherals::PAM8403::RIN, OUTPUT);
         pinMode(Peripherals::DS3231::SQW_INT, INPUT_PULLUP);
         pinMode(Peripherals::DS3231::SDA, INPUT_PULLUP);
         pinMode(Peripherals::DS3231::SCL, INPUT_PULLUP);
@@ -35,14 +36,14 @@ namespace Peripherals
         digitalWrite(Peripherals::SD_CARD::SS, HIGH);
         digitalWrite(Peripherals::SD_CARD::MOSI, LOW);
         digitalWrite(Peripherals::SD_CARD::SCK, LOW);
-        digitalWrite(Peripherals::PAM8403::RIN, LOW);
+        //digitalWrite(Peripherals::PAM8403::RIN, LOW);
         digitalWrite(Peripherals::LED_HTB, LOW);
         digitalWrite(Peripherals::PRF_CTL, HIGH);
 
         if (not SD.begin(Peripherals::SD_CARD::SS, Peripherals::SD_CARD::hspi) || SD.cardType() == CARD_NONE)
         {
-            log_e("sd error");
-            std::abort();
+            log_d("sd error");
+            std::exit(EXIT_FAILURE);
         }
 
         log_d("end");

@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <SPI.h>
+#include <mutex>
 
 namespace Peripherals
 {
@@ -89,6 +90,8 @@ namespace Peripherals
         LED_HTB = 16,
         PRF_CTL = 27
     };
+
+    extern std::mutex i2cMutex;
 
     auto init() -> void;
 }; // namespace Peripherals

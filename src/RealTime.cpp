@@ -31,7 +31,7 @@ namespace RealTime
 
     static auto syncDateTime() -> void
     {
-        std::lock_guard<std::mutex> lock{mutex};
+        std::lock_guard<std::mutex> lock{mutex}, i2cLock{Peripherals::i2cMutex};
 
         const auto time{timeval{static_cast<std::time_t>(rtc.GetDateTime().Epoch32Time())}};
         settimeofday(&time, nullptr);
@@ -39,7 +39,7 @@ namespace RealTime
 
     static auto startHardware() -> void
     {
-        std::lock_guard<std::mutex> lock{mutex};
+        std::lock_guard<std::mutex> lock{mutex}, i2cLock{Peripherals::i2cMutex};
 
         rtc.Begin();
 
@@ -58,7 +58,7 @@ namespace RealTime
 
     static auto configureAlarms() -> void
     {
-        std::lock_guard<std::mutex> lock{mutex};
+        std::lock_guard<std::mutex> lock{mutex}, i2cLock{Peripherals::i2cMutex};
 
         log_d("enabled = %u", cfg.autoSleepWakeUp.enabled);
         log_d("sleepTime = %02u:%02u", cfg.autoSleepWakeUp.sleepTime[0], cfg.autoSleepWakeUp.sleepTime[1]);
@@ -97,7 +97,7 @@ namespace RealTime
 
     static auto checkAlarms() -> void
     {
-        std::lock_guard<std::mutex> lock{mutex};
+        std::lock_guard<std::mutex> lock{mutex}, i2cLock{Peripherals::i2cMutex};
 
         if (cfg.autoSleepWakeUp.enabled)
         {
@@ -150,7 +150,7 @@ namespace RealTime
 
     auto adjustDateTime(const std::chrono::system_clock::time_point& timePoint) -> void
     {
-        std::lock_guard<std::mutex> lock{mutex};
+        std::lock_guard<std::mutex> lock{mutex}, i2cLock{Peripherals::i2cMutex};
 
         const auto time{timeval{std::chrono::system_clock::to_time_t(timePoint)}};
         settimeofday(&time, nullptr);

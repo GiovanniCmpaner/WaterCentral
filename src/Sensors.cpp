@@ -73,10 +73,10 @@ namespace Sensors
     static constexpr std::array<double, 4> factors{0.0155555555555556, 0.0311111111111111, 0.1555555555555556, 0.2187500000000000};
     static constexpr std::array<double, 4> offsets{2.2222222222222223, 4.4444444444444446, 22.2222222222222250, 31.2500000000000036};
 
-    static auto infoTask(uint8_t index) -> void
+    static auto infoTask( uint8_t index ) -> void
     {
         auto timePoint{std::chrono::system_clock::now()};
-        while (1)
+        while ( 1 )
         {
             {
                 std::lock_guard<std::mutex> lock{infos[index].mutex};
@@ -85,15 +85,15 @@ namespace Sensors
                 const auto calibratedValue{ rawValue* cfg.sensors[index].calibration.factor - cfg.sensors[index].calibration.offset };
                 infos[index].value = calibratedValue;
             }
-            timePoint += std::chrono::seconds(1);
-            std::this_thread::sleep_until(timePoint);
+            timePoint += std::chrono::seconds( 1 );
+            std::this_thread::sleep_until( timePoint );
         }
     }
 
-    auto getValue(uint8_t index) -> double
+    auto getValue( uint8_t index ) -> double
     {
         std::lock_guard<std::mutex> lock{infos[index].mutex};
-        return infos[index].value;
+        return 10;//infos[index].value;
     }
 
     auto init() -> void
@@ -104,15 +104,15 @@ namespace Sensors
         //    std::abort();
         //}
 
-        for (auto n{0}; n < infos.size(); ++n)
+        for ( auto n{0}; n < infos.size(); ++n )
         {
             {
                 std::lock_guard<std::mutex> lock{infos[n].mutex};
-                infos[n].analogRead.begin(infos[n].pin, false);
+                infos[n].analogRead.begin( infos[n].pin, false );
                 infos[n].factor = factors[cfg.sensors[n].type];
                 infos[n].offset = offsets[cfg.sensors[n].type];
             }
-            infos[n].future = std::async(std::launch::async, infoTask, n);
+            infos[n].future = std::async( std::launch::async, infoTask, n );
         }
 
         //BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
@@ -120,5 +120,10 @@ namespace Sensors
 //
         //float temp(NAN), hum(NAN), pres(NAN);
         //bme.read(pres, temp, hum, tempUnit, presUnit);
+    }
+
+    auto process() -> void
+    {
+
     }
 } // namespace Sensors

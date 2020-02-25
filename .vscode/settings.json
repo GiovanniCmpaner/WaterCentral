@@ -53,6 +53,7 @@
         "ratio": "cpp",
         "random": "cpp",
         "forward_list": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "map": "cpp"
     }
 }

@@ -7,3 +7,6 @@ indent-switches
 add-braces
 align-pointer=type
 align-reference=type
+pad-paren-in
+pad-comma
+pad-oper
