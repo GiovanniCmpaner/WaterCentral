@@ -5,4 +5,5 @@
 namespace WebInterface
 {
     auto init() -> void;
+    auto process() -> void;
 } // namespace WebInterface

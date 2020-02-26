@@ -15,8 +15,6 @@ namespace Peripherals
             MISO = 12,
             SCK = 14
         };
-
-        static SPIClass hspi{HSPI};
     }; // namespace SD_CARD
 
     namespace BME280
@@ -49,19 +47,11 @@ namespace Peripherals
                 D5 = 5,
                 D6 = 6,
                 D7 = 7,
-                BACKLIGHPIN = 3,
+                BACKLIGHT = 3,
             };
         }
         
     }; // namespace LCD
-
-    namespace PAM8403
-    {
-        enum Pins
-        {
-            RIN = 25
-        };
-    };
 
     namespace DS3231
     {
@@ -88,10 +78,9 @@ namespace Peripherals
     {
         BTN = 4,
         LED_HTB = 16,
-        PRF_CTL = 27
+        PRF_CTL = 27,
+        WRN_BZR = 25
     };
-
-    extern std::mutex i2cMutex;
 
     auto init() -> void;
 }; // namespace Peripherals

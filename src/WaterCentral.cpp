@@ -22,26 +22,15 @@ void setup()
     Serial.setDebugOutput( true );
     log_d( "begin" );
 
-    {
-        esp_pthread_cfg_t cfg;
-        esp_pthread_get_cfg( &cfg );
-        cfg.prio = CONFIG_ESP32_PTHREAD_TASK_PRIO_DEFAULT;
-        cfg.stack_size = 4096;
-        esp_pthread_set_cfg( &cfg );
-    }
-
     Peripherals::init();
-
     Configuration::init();
     Configuration::load( &cfg );
 
     RealTime::init();
     Database::init();
     WebInterface::init();
-
-    digitalWrite( Peripherals::PRF_CTL, LOW );
     Display::init();
-    //Sensors::init();
+    Sensors::init();
 
     log_d( "end" );
 }
@@ -84,5 +73,9 @@ void setup()
 
 void loop()
 {
+    RealTime::process();
+    Database::process();
+    WebInterface::process();
     Display::process();
+    Sensors::process();
 }

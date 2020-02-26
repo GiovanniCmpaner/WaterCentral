@@ -4,13 +4,13 @@
 #include <SPI.h>
 #include <cstdlib>
 #include <esp_log.h>
+#include <driver/gpio.h>
 
 #include "Peripherals.hpp"
 
 namespace Peripherals
 {
-    static auto hspi{SPIClass{HSPI}};
-    std::mutex i2cMutex{};
+    static SPIClass hspi{HSPI};
 
     auto init() -> void
     {
@@ -22,7 +22,6 @@ namespace Peripherals
         pinMode(Peripherals::SD_CARD::SCK, OUTPUT);
         pinMode(Peripherals::BME280::SDA, INPUT_PULLUP);
         pinMode(Peripherals::BME280::SCL, INPUT_PULLUP);
-        //pinMode(Peripherals::PAM8403::RIN, OUTPUT);
         pinMode(Peripherals::DS3231::SQW_INT, INPUT_PULLUP);
         pinMode(Peripherals::DS3231::SDA, INPUT_PULLUP);
         pinMode(Peripherals::DS3231::SCL, INPUT_PULLUP);
@@ -32,15 +31,16 @@ namespace Peripherals
         pinMode(Peripherals::BTN, INPUT_PULLUP);
         pinMode(Peripherals::LED_HTB, OUTPUT);
         pinMode(Peripherals::PRF_CTL, OUTPUT);
+        pinMode(Peripherals::WRN_BZR, OUTPUT);
 
         digitalWrite(Peripherals::SD_CARD::SS, HIGH);
         digitalWrite(Peripherals::SD_CARD::MOSI, LOW);
         digitalWrite(Peripherals::SD_CARD::SCK, LOW);
-        //digitalWrite(Peripherals::PAM8403::RIN, LOW);
         digitalWrite(Peripherals::LED_HTB, LOW);
-        digitalWrite(Peripherals::PRF_CTL, HIGH);
+        digitalWrite(Peripherals::PRF_CTL, LOW);
+        digitalWrite(Peripherals::WRN_BZR, LOW);
 
-        if (not SD.begin(Peripherals::SD_CARD::SS, Peripherals::SD_CARD::hspi) || SD.cardType() == CARD_NONE)
+        if (not SD.begin(Peripherals::SD_CARD::SS, hspi) || SD.cardType() == CARD_NONE)
         {
             log_d("sd error");
             std::exit(EXIT_FAILURE);

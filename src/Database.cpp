@@ -11,63 +11,57 @@
 #include "Configuration.hpp"
 #include "Database.hpp"
 #include "Peripherals.hpp"
-#include "RealTime.hpp"
+#include "Utils.hpp"
+#include "Sensors.hpp"
 
 namespace Database
 {
     static sqlite3* db{};
-    static std::future<void> future{};
-    static std::mutex mutex{};
 
-    auto SensorData::serialize(ArduinoJson::JsonVariant& json, const SensorData& sensorData) -> void
+    auto SensorData::serialize( ArduinoJson::JsonVariant& json, const SensorData& sensorData ) -> void
     {
         json["id"] = sensorData.id;
-        json["datetime"] = RealTime::dateTimeToString(std::chrono::system_clock::from_time_t(sensorData.dateTime));
+        json["datetime"] = Utils::DateTime::toString( std::chrono::system_clock::from_time_t( sensorData.dateTime ) );
         json["temperature"] = sensorData.temperature;
         json["humidity"] = sensorData.humidity;
         json["pressure"] = sensorData.pressure;
-        for (auto n : sensorData.sensors)
+        for ( auto n : sensorData.sensors )
         {
-            json["sensors"].add(n);
+            json["sensors"].add( n );
         }
     }
 
     auto SensorData::get() -> SensorData
     {
-        auto sensorData{SensorData{}};
-        sensorData.dateTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        sensorData.temperature = 1.234;
-        sensorData.humidity = 1.234;
-        sensorData.pressure = 1.234;
-        sensorData.sensors[0] = 1.234;
-        sensorData.sensors[1] = 1.234;
-        sensorData.sensors[2] = 1.234;
-        return sensorData;
+        return {
+            0,
+            std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() ),
+            Sensors::getTemperature(),
+            Sensors::getHumidity(),
+            Sensors::getPressure(),
+            { Sensors::getValue(0), Sensors::getValue(1), Sensors::getValue(2) }
+        };
     }
 
     static auto initializeDatabase() -> void
     {
-        std::lock_guard<std::mutex> lock{mutex};
-
-        log_d("begin");
+        log_d( "begin" );
 
         sqlite3_initialize();
 
-        const auto rc{sqlite3_open("/sd/sensors_data.db", &db)};
-        if (rc != SQLITE_OK)
+        const auto rc{sqlite3_open( "/sd/sensors_data.db", &db )};
+        if ( rc != SQLITE_OK )
         {
-            log_e("database open error: %s\n", sqlite3_errmsg(db));
+            log_e( "database open error: %s\n", sqlite3_errmsg( db ) );
             std::abort();
         };
 
-        log_d("end");
+        log_d( "end" );
     }
 
     static auto createTable() -> void
     {
-        std::lock_guard<std::mutex> lock{mutex};
-
-        log_d("begin");
+        log_d( "begin" );
         {
             const auto query{"CREATE TABLE IF NOT EXISTS               "
                              "    SENSORS_DATA (                       "
@@ -81,10 +75,10 @@ namespace Database
                              "        SENSOR_3    NUMERIC              "
                              "    )                                    "};
 
-            const auto rc{sqlite3_exec(db, query, nullptr, nullptr, nullptr)};
-            if (rc != SQLITE_OK)
+            const auto rc{sqlite3_exec( db, query, nullptr, nullptr, nullptr )};
+            if ( rc != SQLITE_OK )
             {
-                log_e("table create error: %s\n", sqlite3_errmsg(db));
+                log_e( "table create error: %s\n", sqlite3_errmsg( db ) );
                 std::abort();
             }
         }
@@ -92,22 +86,20 @@ namespace Database
             const auto query{"CREATE UNIQUE INDEX IF NOT EXISTS DATE_TIME_INDEX "
                              "ON SENSORS_DATA( DATE_TIME )                      "};
 
-            const auto rc{sqlite3_exec(db, query, nullptr, nullptr, nullptr)};
-            if (rc != SQLITE_OK)
+            const auto rc{sqlite3_exec( db, query, nullptr, nullptr, nullptr )};
+            if ( rc != SQLITE_OK )
             {
-                log_e("table index error: %s\n", sqlite3_errmsg(db));
+                log_e( "table index error: %s\n", sqlite3_errmsg( db ) );
                 std::abort();
             }
         }
-        log_d("end");
+        log_d( "end" );
     }
 
-    static auto insertSensorData(const SensorData& sensorData) -> int64_t
+    static auto insert( const SensorData& sensorData ) -> int64_t
     {
-        std::lock_guard<std::mutex> lock{mutex};
-
         int64_t id{};
-        log_d("begin");
+        log_d( "begin" );
 
         const auto query
         {
@@ -124,67 +116,56 @@ namespace Database
             "    (?,?,?,?,?,?,?)        "};
 
         sqlite3_stmt* res;
-        const auto rc{sqlite3_prepare_v2(db, query, strlen(query), &res, nullptr)};
-        if (rc != SQLITE_OK)
+        const auto rc{sqlite3_prepare_v2( db, query, strlen( query ), &res, nullptr )};
+        if ( rc != SQLITE_OK )
         {
-            log_d("insert prepare error: %s", sqlite3_errmsg(db));
+            log_d( "insert prepare error: %s", sqlite3_errmsg( db ) );
             //std::abort();
         }
         else
         {
-            sqlite3_bind_int64(res, 1, sensorData.dateTime);
-            sqlite3_bind_double(res, 2, sensorData.temperature);
-            sqlite3_bind_double(res, 3, sensorData.humidity);
-            sqlite3_bind_double(res, 4, sensorData.pressure);
-            sqlite3_bind_double(res, 5, sensorData.sensors[0]);
-            sqlite3_bind_double(res, 6, sensorData.sensors[1]);
-            sqlite3_bind_double(res, 7, sensorData.sensors[2]);
-            if (sqlite3_step(res) != SQLITE_DONE)
+            sqlite3_bind_int64( res, 1, sensorData.dateTime );
+            sqlite3_bind_double( res, 2, sensorData.temperature );
+            sqlite3_bind_double( res, 3, sensorData.humidity );
+            sqlite3_bind_double( res, 4, sensorData.pressure );
+            sqlite3_bind_double( res, 5, sensorData.sensors[0] );
+            sqlite3_bind_double( res, 6, sensorData.sensors[1] );
+            sqlite3_bind_double( res, 7, sensorData.sensors[2] );
+            if ( sqlite3_step( res ) != SQLITE_DONE )
             {
-                log_d("insert error: %s", sqlite3_errmsg(db));
+                log_d( "insert error: %s", sqlite3_errmsg( db ) );
                 //std::abort();
             }
-            sqlite3_finalize(res);
-            id = sqlite3_last_insert_rowid(db);
+            sqlite3_finalize( res );
+            id = sqlite3_last_insert_rowid( db );
         }
-        log_d("end");
+        log_d( "end" );
         return id;
     }
 
-    static auto insertTask() -> void
+    static auto generate() -> void
     {
-        auto timePoint{RealTime::ceil(std::chrono::system_clock::now(), std::chrono::minutes(5))};
-        log_d("next insert = %s",RealTime::dateTimeToString(timePoint).data());
-        while (1)
-        {
-            std::this_thread::sleep_until(timePoint);
-            timePoint += std::chrono::minutes(5);
-
-            insertSensorData(SensorData::get());
-        }
+        insert( SensorData::get() );
     }
 
     auto init() -> void
     {
-        log_d("begin");
-        
+        log_d( "begin" );
+
         initializeDatabase();
         createTable();
 
-        log_d("end");
-        future = std::async(std::launch::async, Database::insertTask);
+        log_d( "end" );
     }
 
     auto getData(
-        std::function<void(const SensorData&)> callback,
+        std::function<void( const SensorData& )> callback,
         int64_t id,
         std::chrono::system_clock::time_point start,
         std::chrono::system_clock::time_point end
     ) -> void
     {
-        std::lock_guard<std::mutex> lock{mutex};
-
-        log_d("begin");
+        log_d( "begin" );
 
         const auto query
         {
@@ -206,41 +187,46 @@ namespace Database
             "LIMIT 20                                     "};
 
         sqlite3_stmt* res;
-        const auto rc{sqlite3_prepare_v2(db, query, strlen(query), &res, nullptr)};
-        if (rc != SQLITE_OK)
+        const auto rc{sqlite3_prepare_v2( db, query, strlen( query ), &res, nullptr )};
+        if ( rc != SQLITE_OK )
         {
-            log_e("select prepare error: %s", sqlite3_errmsg(db));
+            log_e( "select prepare error: %s", sqlite3_errmsg( db ) );
             std::abort();
         }
 
-        if (id != int64_t{})
+        if ( id != int64_t{} )
         {
-            sqlite3_bind_int64(res, 1, id);
+            sqlite3_bind_int64( res, 1, id );
         }
-        if (start != std::chrono::system_clock::time_point::min())
+        if ( start != std::chrono::system_clock::time_point::min() )
         {
-            sqlite3_bind_int64(res, 2, std::chrono::system_clock::to_time_t(start));
+            sqlite3_bind_int64( res, 2, std::chrono::system_clock::to_time_t( start ) );
         }
-        if (end != std::chrono::system_clock::time_point::max())
+        if ( end != std::chrono::system_clock::time_point::max() )
         {
-            sqlite3_bind_int64(res, 3, std::chrono::system_clock::to_time_t(end));
+            sqlite3_bind_int64( res, 3, std::chrono::system_clock::to_time_t( end ) );
         }
 
-        while (sqlite3_step(res) == SQLITE_ROW)
+        while ( sqlite3_step( res ) == SQLITE_ROW )
         {
             auto sensorData{SensorData{}};
-            sensorData.id = sqlite3_column_int64(res, 0);
-            sensorData.dateTime = sqlite3_column_int64(res, 1);
-            sensorData.temperature = sqlite3_column_int64(res, 2);
-            sensorData.humidity = sqlite3_column_double(res, 3);
-            sensorData.pressure = sqlite3_column_double(res, 4);
-            sensorData.sensors[0] = sqlite3_column_double(res, 5);
-            sensorData.sensors[1] = sqlite3_column_double(res, 6);
-            sensorData.sensors[2] = sqlite3_column_double(res, 7);
-            callback(sensorData);
+            sensorData.id = sqlite3_column_int64( res, 0 );
+            sensorData.dateTime = sqlite3_column_int64( res, 1 );
+            sensorData.temperature = sqlite3_column_int64( res, 2 );
+            sensorData.humidity = sqlite3_column_double( res, 3 );
+            sensorData.pressure = sqlite3_column_double( res, 4 );
+            sensorData.sensors[0] = sqlite3_column_double( res, 5 );
+            sensorData.sensors[1] = sqlite3_column_double( res, 6 );
+            sensorData.sensors[2] = sqlite3_column_double( res, 7 );
+            callback( sensorData );
         }
-        sqlite3_finalize(res);
+        sqlite3_finalize( res );
 
-        log_d("end");
+        log_d( "end" );
+    }
+
+    auto process() -> void
+    {
+        Utils::bound( std::chrono::minutes( 5 ), Database::generate );
     }
 } // namespace Database

@@ -21,6 +21,7 @@ namespace Database
     };
 
     auto init() -> void;
+    auto process() -> void;
     auto getData( 
         std::function<void ( const SensorData& ) > callback, 
         int64_t id = {}, 
