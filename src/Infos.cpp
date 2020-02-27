@@ -12,10 +12,10 @@
 #include "Configuration.hpp"
 #include "Display.hpp"
 #include "Peripherals.hpp"
-#include "Sensors.hpp"
+#include "Infos.hpp"
 #include "Utils.hpp"
 
-namespace Sensors
+namespace Infos
 {
     //-----------------------------------------------------------------------------------
     //namespace SampleCalculus
@@ -78,17 +78,20 @@ namespace Sensors
 
     static auto update() -> void
     {
+        bme.read( pressure, temperature, humidity, BME280::TempUnit_Celsius, BME280::PresUnit_hPa );
         for ( auto n{0}; n < infos.size(); ++n )
         {
-            infos[n].analogRead.update();
-            const auto rawValue{ infos[n].analogRead.getValue()* infos[n].factor - infos[n].offset };
-            const auto calibratedValue{ rawValue* cfg.sensors[n].calibration.factor - cfg.sensors[n].calibration.offset };
-            infos[n].value = calibratedValue;
+            if( cfg.sensors[n].enabled )
+            {
+                infos[n].analogRead.update();
+                const auto rawValue{ infos[n].analogRead.getValue()* infos[n].factor - infos[n].offset };
+                const auto calibratedValue{ rawValue* cfg.sensors[n].calibration.factor - cfg.sensors[n].calibration.offset };
+                infos[n].value = calibratedValue;
+            }
         }
-        bme.read( pressure, temperature, humidity, BME280::TempUnit_Celsius, BME280::PresUnit_hPa );
     }
 
-    auto getValue( uint8_t index ) -> double
+    auto getSensor( uint8_t index ) -> double
     {
         return infos[index].value;
     }
@@ -118,14 +121,38 @@ namespace Sensors
 
         for ( auto n{0}; n < infos.size(); ++n )
         {
-            infos[n].analogRead.begin( infos[n].pin, false );
-            infos[n].factor = factors[cfg.sensors[n].type];
-            infos[n].offset = offsets[cfg.sensors[n].type];
+            if( cfg.sensors[n].enabled )
+            {
+                infos[n].analogRead.begin( infos[n].pin, false );
+                infos[n].factor = factors[cfg.sensors[n].type];
+                infos[n].offset = offsets[cfg.sensors[n].type];
+            }
         }
     }
 
     auto process() -> void
     {
-        Utils::periodic( std::chrono::seconds( 500 ), Sensors::update );
+        Utils::periodic( std::chrono::seconds( 500 ), Infos::update );
+    }
+
+    auto serialize( ArduinoJson::JsonVariant& json ) -> void
+    {
+        json["temperature"] = Infos::temperature;
+        json["humidity"] = Infos::humidity;
+        json["pressure"] = Infos::pressure;
+        {
+            auto sensors{ json["sensors"] };
+            for ( auto n{0}; n < Infos::infos.size(); ++n )
+            {
+                if( cfg.sensors[n].enabled )
+                {
+                    auto sensor{ sensors.addElement() };
+
+                    sensor["name"] = cfg.sensors[n].name;
+                    sensor["value"] = Infos::infos[n].value;
+                    sensor["percent"] = map( Infos::infos[n].value, cfg.sensors[n].min, cfg.sensors[n].max, 0.0, 100.0 );
+                }
+            }
+        }
     }
 } // namespace Sensors

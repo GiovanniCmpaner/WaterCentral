@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="data:,">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script src="jquery.min.js"></script>
+  <script src="infos.js"></script>
+  <title>WaterCentral - Infos</title>
+</head>
+
+<body>
+  <nav id="message"></nav>
+  <h2> Infos </h2>
+  <fieldset>
+    <legend> Environment </legend>
+    <table id="environment">
+      <tr>
+        <td>
+          <label for="temperature"> Temperature </label>
+          <input id="temperature" type="number" step="0.01" readonly>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label for="humidity"> Humidity </label>
+          <input id="humidity" type="number" step="0.01" readonly>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <label for="pressure"> Pressure </label>
+          <input id="pressure" type="number" step="0.01" readonly>
+        </td>
+      </tr>
+    </table>
+  </fieldset>
+  <fieldset>
+    <legend> Sensors </legend>
+    <table id="sensors" class="responsive">
+      <thead>
+        <tr>
+          <th> N </th>
+          <th> Value </th>
+          <th> Graph </th>
+        </tr>
+      </thead>
+      <tbody>
+        <template id="sensor_template">
+          <tr>
+            <th>
+              <label for="sensor_number"> N </label>
+              <span id="sensor_number"></span>
+            </th>
+            <td>
+              <label for="sensor_value"> Value </label>
+              <input id="sensor_value" type="number" step="any" readonly>
+            </td>
+            <td>
+              <label for="sensor_graph"> Graph </label>
+              <canvas id="sensor_graph" style="width: 20em; height: 1.2em; border: 1px solid black; padding: 0.15em; display: block;"> </canvas>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </fieldset>
+</body>
+
+</html>

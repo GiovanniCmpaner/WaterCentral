@@ -14,7 +14,7 @@
 #include "Display.hpp"
 #include "LcdBarGraph.hpp"
 #include "Peripherals.hpp"
-#include "Sensors.hpp"
+#include "Infos.hpp"
 #include "Utils.hpp"
 
 namespace Display
@@ -84,7 +84,7 @@ namespace Display
                     lcd.print( cfg.sensors[n].name.data() );
                 }
 
-                const auto percentage{ map( Sensors::getValue( n ), cfg.sensors[n].min, cfg.sensors[n].max, 0.0, 100.0 ) };
+                const auto percentage{ map( Infos::getSensor( n ), cfg.sensors[n].min, cfg.sensors[n].max, 0.0, 100.0 ) };
                 bar.draw( n, nameMaxLength + 1, nRow, 20 - ( nameMaxLength + 1 ), percentage );
                 nRow++;
             }
@@ -96,9 +96,9 @@ namespace Display
         uint8_t nRow = 0;
         for ( uint8_t n = 0; n < states.size(); n++ )
         {
-            if ( cfg.sensors[n].enabled )
+            if ( cfg.sensors[n].enabled and cfg.sensors[n].alarm.enabled )
             {
-                const auto percentage{ map( Sensors::getValue( n ), cfg.sensors[n].min, cfg.sensors[n].max, 0.0, 100.0 ) };
+                const auto percentage{ map( Infos::getSensor( n ), cfg.sensors[n].min, cfg.sensors[n].max, 0.0, 100.0 ) };
                 const auto bottom{ cfg.sensors[n].alarm.value };
                 const auto top{ min( cfg.sensors[n].alarm.value * 1.05, 100.0 ) };
 
@@ -143,9 +143,10 @@ namespace Display
     {
         auto warningLed{false};
         auto warningBuzzer{false};
+
         for ( uint8_t n{0}; n < states.size(); n++ )
         {
-            if ( cfg.sensors[n].enabled )
+            if ( cfg.sensors[n].enabled and cfg.sensors[n].alarm.enabled )
             {
                 if( states[n].warningLed )
                 {

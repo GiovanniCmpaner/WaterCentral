@@ -17,7 +17,7 @@ namespace Database
         std::array<double, 3> sensors;
 
         static auto get() -> SensorData;
-        static auto serialize ( ArduinoJson::JsonVariant& json, const SensorData& sensorData ) -> void;
+        auto serialize ( ArduinoJson::JsonVariant& json ) const -> void;
     };
 
     auto init() -> void;

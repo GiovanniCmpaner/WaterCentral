@@ -79,8 +79,8 @@ struct Configuration
     static auto load(Configuration *cfg) -> void;
     static auto save(const Configuration &cfg) -> void;
 
-    static auto serialize(ArduinoJson::JsonVariant &json, const Configuration &cfg) -> void;
-    static auto deserialize(const ArduinoJson::JsonVariant &json, Configuration &cfg) -> void;
+    auto serialize(ArduinoJson::JsonVariant &json) const -> void;
+    auto deserialize(const ArduinoJson::JsonVariant &json) -> void;
 };
 
 extern Configuration cfg;

@@ -12,20 +12,20 @@
 #include "Database.hpp"
 #include "Peripherals.hpp"
 #include "Utils.hpp"
-#include "Sensors.hpp"
+#include "Infos.hpp"
 
 namespace Database
 {
     static sqlite3* db{};
 
-    auto SensorData::serialize( ArduinoJson::JsonVariant& json, const SensorData& sensorData ) -> void
+    auto SensorData::serialize( ArduinoJson::JsonVariant& json ) const -> void
     {
-        json["id"] = sensorData.id;
-        json["datetime"] = Utils::DateTime::toString( std::chrono::system_clock::from_time_t( sensorData.dateTime ) );
-        json["temperature"] = sensorData.temperature;
-        json["humidity"] = sensorData.humidity;
-        json["pressure"] = sensorData.pressure;
-        for ( auto n : sensorData.sensors )
+        json["id"] = this->id;
+        json["datetime"] = Utils::DateTime::toString( std::chrono::system_clock::from_time_t( this->dateTime ) );
+        json["temperature"] = this->temperature;
+        json["humidity"] = this->humidity;
+        json["pressure"] = this->pressure;
+        for ( auto n : this->sensors )
         {
             json["sensors"].add( n );
         }
@@ -33,13 +33,14 @@ namespace Database
 
     auto SensorData::get() -> SensorData
     {
-        return {
+        return
+        {
             0,
             std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() ),
-            Sensors::getTemperature(),
-            Sensors::getHumidity(),
-            Sensors::getPressure(),
-            { Sensors::getValue(0), Sensors::getValue(1), Sensors::getValue(2) }
+            Infos::getTemperature(),
+            Infos::getHumidity(),
+            Infos::getPressure(),
+            { Infos::getSensor( 0 ), Infos::getSensor( 1 ), Infos::getSensor( 2 ) }
         };
     }
 
@@ -209,10 +210,10 @@ namespace Database
 
         while ( sqlite3_step( res ) == SQLITE_ROW )
         {
-            auto sensorData{SensorData{}};
+            SensorData sensorData;
             sensorData.id = sqlite3_column_int64( res, 0 );
             sensorData.dateTime = sqlite3_column_int64( res, 1 );
-            sensorData.temperature = sqlite3_column_int64( res, 2 );
+            sensorData.temperature = sqlite3_column_double( res, 2 );
             sensorData.humidity = sqlite3_column_double( res, 3 );
             sensorData.pressure = sqlite3_column_double( res, 4 );
             sensorData.sensors[0] = sqlite3_column_double( res, 5 );

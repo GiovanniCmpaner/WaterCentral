@@ -13,7 +13,7 @@
 #include "RealTime.hpp"
 #include "WebInterface.hpp"
 #include "Display.hpp"
-#include "Sensors.hpp"
+#include "Infos.hpp"
 
 void setup()
 {
@@ -30,7 +30,7 @@ void setup()
     Database::init();
     WebInterface::init();
     Display::init();
-    Sensors::init();
+    Infos::init();
 
     log_d( "end" );
 }
@@ -77,5 +77,5 @@ void loop()
     Database::process();
     WebInterface::process();
     Display::process();
-    Sensors::process();
+    Infos::process();
 }

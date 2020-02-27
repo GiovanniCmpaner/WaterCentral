@@ -150,9 +150,9 @@
         </tr>
       </table>
     </fieldset>
-    <fieldset id="sensors">
+    <fieldset>
       <legend>Sensors</legend>
-      <table class="responsive">
+      <table id="sensors" class="responsive">
         <thead>
           <tr>
             <th rowspan="2"> N </th>
@@ -172,155 +172,60 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <th>
-              <label for="sensors_number_0">N</label>
-              <span id="sensors_number_0">1</span>
-            </th>
-            <td>
-              <label for="sensors_enabled_0">Enabled</label>
-              <input type="checkbox" id="sensors_enabled_0" required>
-            </td>
-            <td>
-              <label for="sensors_name_0">Name</label>
-              <input type="text" id="sensors_name_0" required>
-            </td>
-            <td>
-              <label for="sensors_type_0">Type</label>
-              <select id="sensors_type_0" required>
-                <option disabled selected value hidden></option>
-                <option value="0">MPX5050</option>
-                <option value="1">MPX5100</option>
-                <option value="2">MPX5500</option>
-                <option value="3">MPX5700</option>
-              </select>
-            </td>
-            <td>
-              <label for="sensors_min_0">Min</label>
-              <input type="number" id="sensors_min_0" required>
-            </td>
-            <td>
-              <label for="sensors_max_0">Max</label>
-              <input type="number" id="sensors_max_0" required>
-            </td>
-            <td>
-              <label for="sensors_calibration_factor_0">Calibration Factor</label>
-              <input type="number" id="sensors_calibration_factor_0" required>
-            </td>
-            <td>
-              <label for="sensors_calibration_offset_0">Calibration Offset</label>
-              <input type="number" id="sensors_calibration_offset_0" required>
-            </td>
-            <td>
-              <label for="sensors_alarm_enabled_0">Alarm Enabled</label>
-              <input type="checkbox" id="sensors_alarm_enabled_0" required>
-            </td>
-            <td>
-              <label for="sensors_alarm_value_0">Alarm Value</label>
-              <input type="number" id="sensors_alarm_value_0" required>
-            </td>
-          </tr>
-          <tr>
-            <th>
-              <label for="sensors_number_1">N</label>
-              <span id="sensors_number_1">2</span>
-            </th>
-            <td>
-              <label for="sensors_enabled_1">Enabled</label>
-              <input type="checkbox" id="sensors_enabled_1" required>
-            </td>
-            <td>
-              <label for="sensors_name_1">Name</label>
-              <input type="text" id="sensors_name_1" required>
-            </td>
-            <td>
-              <label for="sensors_type_1">Type</label>
-              <select id="sensors_type_1" required>
-                <option disabled selected value hidden></option>
-                <option value="0">MPX5050</option>
-                <option value="1">MPX5100</option>
-                <option value="2">MPX5500</option>
-                <option value="3">MPX5700</option>
-              </select>
-            </td>
-            <td>
-              <label for="sensors_min_1">Min</label>
-              <input type="number" id="sensors_min_1" required>
-            </td>
-            <td>
-              <label for="sensors_max_1">Max</label>
-              <input type="number" id="sensors_max_1" required>
-            </td>
-            <td>
-              <label for="sensors_calibration_factor_1">Calibration Factor</label>
-              <input type="number" id="sensors_calibration_factor_1" required>
-            </td>
-            <td>
-              <label for="sensors_calibration_offset_1">Calibration Offset</label>
-              <input type="number" id="sensors_calibration_offset_1" required>
-            </td>
-            <td>
-              <label for="sensors_alarm_enabled_1">Alarm Enabled</label>
-              <input type="checkbox" id="sensors_alarm_enabled_1" required>
-            </td>
-            <td>
-              <label for="sensors_alarm_value_1">Alarm Value</label>
-              <input type="number" id="sensors_alarm_value_1" required>
-            </td>
-          </tr>
-          <tr>
-            <th>
-              <label for="sensors_number_2">N</label>
-              <span id="sensors_number_2">3</span>
-            </th>
-            <td>
-              <label for="sensors_enabled_2">Enabled</label>
-              <input type="checkbox" id="sensors_enabled_2" required>
-            </td>
-            <td>
-              <label for="sensors_name_2">Name</label>
-              <input type="text" id="sensors_name_2" required>
-            </td>
-            <td>
-              <label for="sensors_type_2">Type</label>
-              <select id="sensors_type_2" required>
-                <option disabled selected value hidden></option>
-                <option value="0">MPX5050</option>
-                <option value="1">MPX5100</option>
-                <option value="2">MPX5500</option>
-                <option value="3">MPX5700</option>
-              </select>
-            </td>
-            <td>
-              <label for="sensors_min_2">Min</label>
-              <input type="number" id="sensors_min_2" required>
-            </td>
-            <td>
-              <label for="sensors_max_2">Max</label>
-              <input type="number" id="sensors_max_2" required>
-            </td>
-            <td>
-              <label for="sensors_calibration_factor_2">Calibration Factor</label>
-              <input type="number" id="sensors_calibration_factor_2" required>
-            </td>
-            <td>
-              <label for="sensors_calibration_offset_2">Calibration Offset</label>
-              <input type="number" id="sensors_calibration_offset_2" required>
-            </td>
-            <td>
-              <label for="sensors_alarm_enabled_2">Alarm Enabled</label>
-              <input type="checkbox" id="sensors_alarm_enabled_2" required>
-            </td>
-            <td>
-              <label for="sensors_alarm_value_2">Alarm Value</label>
-              <input type="number" id="sensors_alarm_value_2" required>
-            </td>
-          </tr>
+          <template id="sensor_template">
+            <tr>
+              <th>
+                <label for="sensors_number">N</label>
+                <span id="sensors_number"></span>
+              </th>
+              <td>
+                <label for="sensors_enabled">Enabled</label>
+                <input type="checkbox" id="sensors_enabled">
+              </td>
+              <td>
+                <label for="sensors_name">Name</label>
+                <input type="text" id="sensors_name" required>
+              </td>
+              <td>
+                <label for="sensors_type">Type</label>
+                <select id="sensors_type" required>
+                  <option disabled selected value hidden></option>
+                  <option value="0">MPX5050</option>
+                  <option value="1">MPX5100</option>
+                  <option value="2">MPX5500</option>
+                  <option value="3">MPX5700</option>
+                </select>
+              </td>
+              <td>
+                <label for="sensors_min">Min</label>
+                <input type="number" id="sensors_min" step="any" required>
+              </td>
+              <td>
+                <label for="sensors_max">Max</label>
+                <input type="number" id="sensors_max" step="any" required>
+              </td>
+              <td>
+                <label for="sensors_calibration_factor">Calibration Factor</label>
+                <input type="number" id="sensors_calibration_factor" step="any" required>
+              </td>
+              <td>
+                <label for="sensors_calibration_offset">Calibration Offset</label>
+                <input type="number" id="sensors_calibration_offset" step="any" required>
+              </td>
+              <td>
+                <label for="sensors_alarm_enabled">Alarm Enabled</label>
+                <input type="checkbox" id="sensors_alarm_enabled">
+              </td>
+              <td>
+                <label for="sensors_alarm_value">Alarm Value</label>
+                <input type="number" id="sensors_alarm_value" step="any" required>
+              </td>
+            </tr>
+          </template>
         </tbody>
       </table>
     </fieldset>
     <input type="submit">
-    <input type="reset">
   </form>
 </body>
 

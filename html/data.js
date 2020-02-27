@@ -9,13 +9,6 @@ $(document).ready(() => {
         });
 });
 
-function clearMessage() {
-    if (typeof this.fadeOutHandle != "undefined") {
-        clearTimeout(this.fadeOutHandle);
-    }
-    this.fadeOutHandle = setTimeout(() => $("#message").fadeOut(250), 2000);
-}
-
 function handleFilter() {
     $("#filter").submit((event) => {
         event.preventDefault();
@@ -108,68 +101,73 @@ function getData(filter, clear) {
     }
 
     $("#filter :input").prop("disabled", true);
-    infoMessage("Loading").then(() => {
-        $.ajax({
-            type: "GET",
-            url: "http://192.168.1.200/data.json",
-            accepts: 'application/json',
-            timeout: 5000,
-            data: filter
+    infoMessage("Loading");
+    $.ajax({
+        type: "GET",
+        url: "http://192.168.1.200/data.json",
+        accepts: 'application/json',
+        timeout: 5000,
+        data: filter
+    })
+        .done((data) => {
+            this.prevFilter = filter;
+
+            if (clear) {
+                $("#result tbody tr").remove();
+            }
+
+            var template = $($.parseHTML($("#data_template").html()));
+            for (const d of data) {
+                var row = template.clone();
+                row.prop("id", `data_${d.id}`);
+                row.find("#data_id").text(d.id);
+                row.find("#data_datetime").text(d.datetime);
+                row.find("#data_temperature").text(d.temperature);
+                row.find("#data_humidity").text(d.humidity);
+                row.find("#data_pressure").text(d.pressure);
+                row.find("#data_sensor_0").text(d.sensors[0]);
+                row.find("#data_sensor_1").text(d.sensors[1]);
+                row.find("#data_sensor_2").text(d.sensors[2]);
+                row.appendTo($("#result tbody"));
+            }
+
+            var lastRow = $("#result tbody tr:last");
+            if (lastRow) {
+                this.prevFilter.id = parseInt(lastRow.find("#data_id").text()) + 1;
+            }
+
+            successMessage("Done");
+            deferred.resolve(data.length);
         })
-            .done((data) => {
-                this.prevFilter = filter;
-
-                if (clear) {
-                    $("#result tbody tr").remove();
-                }
-
-                var template = $($.parseHTML($("#data_template").html()));
-                for (const d of data) {
-                    var row = template.clone();
-                    row.prop("id", `data_${d.id}`);
-                    row.find("#data_id").text(d.id);
-                    row.find("#data_datetime").text(d.datetime);
-                    row.find("#data_temperature").text(d.temperature);
-                    row.find("#data_humidity").text(d.humidity);
-                    row.find("#data_pressure").text(d.pressure);
-                    row.find("#data_sensor_0").text(d.sensors[0]);
-                    row.find("#data_sensor_1").text(d.sensors[1]);
-                    row.find("#data_sensor_2").text(d.sensors[2]);
-                    row.appendTo($("#result tbody"));
-                }
-
-                var lastRow = $("#result tbody tr:last");
-                if (lastRow) {
-                    this.prevFilter.id = parseInt(lastRow.find("#data_id").text()) + 1;
-                }
-
-                successMessage("Done");
-                deferred.resolve(data.length);
-            })
-            .fail((xhr, status, error) => {
-                errorMessage(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`);
-                deferred.reject();
-            })
-            .always(() => {
-                $("#filter :input").prop("disabled", false);
-            });
-    });
+        .fail((xhr, status, error) => {
+            errorMessage(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`);
+            deferred.reject();
+        })
+        .always(() => {
+            $("#filter :input").prop("disabled", false);
+        });
     return deferred.promise();
 }
 
+function clearMessage() {
+    if (typeof this.fadeOutHandle != "undefined") {
+        clearTimeout(this.fadeOutHandle);
+    }
+    this.fadeOutHandle = setTimeout(() => $("#message").fadeOut(250), 2000);
+}
 
 function infoMessage(text) {
     return $("#message").prop("class", "info").text(text).fadeTo(250, 1.0).promise();
 }
 
 function successMessage(text) {
-    $("#message").prop("class", "success").text(text).fadeTo(250, 1.0).promise();
+    return $("#message").prop("class", "success").text(text).fadeTo(250, 1.0).promise();
 }
 
 function warningMessage(text) {
-    $("#message").prop("class", "warning").text(text).fadeTo(250, 1.0).promise();
+    return $("#message").prop("class", "warning").text(text).fadeTo(250, 1.0).promise();
 }
 
 function errorMessage(text) {
-    $("#message").prop("class", "error").text(text).fadeTo(250, 1.0).promise();
+    return $("#message").prop("class", "error").text(text).fadeTo(250, 1.0).promise();
 }
