@@ -40,6 +40,32 @@ namespace WebInterface
 {
     static std::unique_ptr<AsyncWebServer> server{};
 
+    static auto buildFilter( AsyncWebServerRequest* request ) -> Database::Filter
+    {
+        auto id{int64_t{}};
+        auto start{std::chrono::system_clock::time_point::min()};
+        auto end{std::chrono::system_clock::time_point::max()};
+
+        if ( request->hasParam( "id" ) )
+        {
+            id = request->getParam( "id" )->value().toInt();
+        }
+        if ( request->hasParam( "start" ) )
+        {
+            start = Utils::DateTime::fromString( request->getParam( "start" )->value().c_str() );
+        }
+        if ( request->hasParam( "end" ) )
+        {
+            end = Utils::DateTime::fromString( request->getParam( "end" )->value().c_str() );
+        }
+
+        log_d( "id = %ld", id );
+        log_d( "start = %s", Utils::DateTime::toString( start ).data() );
+        log_d( "end = %s", Utils::DateTime::toString( end ).data() );
+
+        return Database::Filter{id, start, end};
+    }
+
     namespace Get
     {
         static auto handleProgmem( AsyncWebServerRequest* request, const std::string& contentType, const uint8_t* content, size_t len ) -> void
@@ -75,32 +101,15 @@ namespace WebInterface
             auto response{new AsyncJsonResponse{true, 4096}};
             auto responseJson{response->getRoot()};
 
-            auto id{int64_t{}};
-            auto start{std::chrono::system_clock::time_point::min()};
-            auto end{std::chrono::system_clock::time_point::max()};
-
-            if ( request->hasParam( "id" ) )
             {
-                id = request->getParam( "id" )->value().toInt();
+                auto filter{ WebInterface::buildFilter( request )};
+                Database::SensorData sensorData;
+                while( filter.next( &sensorData ) )
+                {
+                    auto element{responseJson.addElement()};
+                    sensorData.serialize( element );
+                }
             }
-            if ( request->hasParam( "start" ) )
-            {
-                start = Utils::DateTime::fromString( request->getParam( "start" )->value().c_str() );
-            }
-            if ( request->hasParam( "end" ) )
-            {
-                end = Utils::DateTime::fromString( request->getParam( "end" )->value().c_str() );
-            }
-
-            log_d( "id = %ld", id );
-            log_d( "start = %s", Utils::DateTime::toString( start ).data() );
-            log_d( "end = %s", Utils::DateTime::toString( end ).data() );
-
-            Database::getData( [&]( const Database::SensorData & sensorData )
-            {
-                auto element{responseJson.addElement()};
-                sensorData.serialize( element );
-            }, id, start, end );
 
             response->setLength();
             request->send( response );
@@ -148,6 +157,50 @@ namespace WebInterface
             handleProgmem( request, "application/javascript", data_js_start, static_cast<size_t>( data_js_end - data_js_start ) );
         }
 
+        static auto handleDataCsv( AsyncWebServerRequest* request ) -> void
+        {
+            auto stream{std::make_shared<std::stringstream>()};
+            auto filter{std::make_shared<Database::Filter>( WebInterface::buildFilter( request ) )};
+            auto response{request->beginChunkedResponse( "text/csv", [ = ]( uint8_t* buffer, size_t maxLen, size_t index ) -> size_t {
+                    auto len{stream->readsome( reinterpret_cast<char*>( buffer ), maxLen )};
+                    if ( len == 0 )
+                    {
+                        if( index == 0 )
+                        {
+                            ( *stream ) << "id" << ';'
+                                        << "datetime" << ';'
+                                        << "temperature" << ';'
+                                        << "humidity" << ';'
+                                        << "pressure" << ';'
+                                        << "sensor_0" << ';'
+                                        << "sensor_1" << ';'
+                                        << "sensor_2" << "\r\n";
+                            len = stream->readsome( reinterpret_cast<char*>( buffer ), maxLen );
+                        }
+                        else
+                        {
+                            Database::SensorData sensorData;
+                            if( filter->next( &sensorData ) )
+                            {
+                                ( *stream ) << sensorData.id << ';'
+                                            << sensorData.dateTime << ';'
+                                            << sensorData.temperature << ';'
+                                            << sensorData.humidity << ';'
+                                            << sensorData.pressure << ';'
+                                            << sensorData.sensors[0] << ';'
+                                            << sensorData.sensors[1] << ';'
+                                            << sensorData.sensors[2] << "\r\n";
+                                len = stream->readsome( reinterpret_cast<char*>( buffer ), maxLen );
+                            }
+                        }
+                    }
+                    return len;
+                } )};
+            response->addHeader( "Content-Disposition", "attachment;filename=data.csv" );
+            request->send( response );
+            log_d( "end" );
+        }
+
         static auto handleJqueryJs( AsyncWebServerRequest* request ) -> void
         {
             handleProgmem( request, "application/javascript", jquery_min_js_start, static_cast<size_t>( jquery_min_js_end - jquery_min_js_start ) );
@@ -167,6 +220,7 @@ namespace WebInterface
         {
             handleProgmem( request, "text/css", style_css_start, static_cast<size_t>( style_css_end - style_css_start ) );
         }
+
     } // namespace Get
 
     namespace Post
@@ -186,6 +240,7 @@ namespace WebInterface
             request->send( 204 );
         }
     } // namespace Post
+
 
     static auto configureServer() -> void
     {
@@ -210,6 +265,7 @@ namespace WebInterface
             server->on( "/configuration.js", HTTP_GET, Get::handleConfigurationJs );
             server->on( "/data.html", HTTP_GET, Get::handleDataHtml );
             server->on( "/data.js", HTTP_GET, Get::handleDataJs );
+            server->on( "/data.csv", HTTP_GET, Get::handleDataCsv );
             server->on( "/jquery.min.js", HTTP_GET, Get::handleJqueryJs );
             server->on( "/infos.html", HTTP_GET, Get::handleInfosHtml );
             server->on( "/infos.js", HTTP_GET, Get::handleInfosJs );

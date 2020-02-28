@@ -159,15 +159,13 @@ namespace Database
         log_d( "end" );
     }
 
-    auto getData(
-        std::function<void( const SensorData& )> callback,
-        int64_t id,
-        std::chrono::system_clock::time_point start,
-        std::chrono::system_clock::time_point end
-    ) -> void
+    auto process() -> void
     {
-        log_d( "begin" );
+        Utils::bound( std::chrono::minutes( 5 ), Database::generate );
+    }
 
+    Filter::Filter( int64_t id, std::chrono::system_clock::time_point start, std::chrono::system_clock::time_point end )
+    {
         const auto query
         {
             "SELECT                                       "
@@ -187,47 +185,64 @@ namespace Database
             "    AND ( DATE_TIME <= IFNULL(?,DATE_TIME) ) "
             "LIMIT 20                                     "};
 
-        sqlite3_stmt* res;
-        const auto rc{sqlite3_prepare_v2( db, query, strlen( query ), &res, nullptr )};
+        const auto rc{sqlite3_prepare_v2( db, query, strlen( query ), &this->res, nullptr )};
         if ( rc != SQLITE_OK )
         {
-            log_e( "select prepare error: %s", sqlite3_errmsg( db ) );
-            std::abort();
+            log_d( "select prepare error: %s", sqlite3_errmsg( db ) );
+            this->res = nullptr;
         }
-
-        if ( id != int64_t{} )
+        else
         {
-            sqlite3_bind_int64( res, 1, id );
+            if ( id != int64_t{} )
+            {
+                sqlite3_bind_int64( this->res, 1, id );
+            }
+            if ( start != std::chrono::system_clock::time_point::min() )
+            {
+                sqlite3_bind_int64( this->res, 2, std::chrono::system_clock::to_time_t( start ) );
+            }
+            if ( end != std::chrono::system_clock::time_point::max() )
+            {
+                sqlite3_bind_int64( this->res, 3, std::chrono::system_clock::to_time_t( end ) );
+            }
         }
-        if ( start != std::chrono::system_clock::time_point::min() )
-        {
-            sqlite3_bind_int64( res, 2, std::chrono::system_clock::to_time_t( start ) );
-        }
-        if ( end != std::chrono::system_clock::time_point::max() )
-        {
-            sqlite3_bind_int64( res, 3, std::chrono::system_clock::to_time_t( end ) );
-        }
-
-        while ( sqlite3_step( res ) == SQLITE_ROW )
-        {
-            SensorData sensorData;
-            sensorData.id = sqlite3_column_int64( res, 0 );
-            sensorData.dateTime = sqlite3_column_int64( res, 1 );
-            sensorData.temperature = sqlite3_column_double( res, 2 );
-            sensorData.humidity = sqlite3_column_double( res, 3 );
-            sensorData.pressure = sqlite3_column_double( res, 4 );
-            sensorData.sensors[0] = sqlite3_column_double( res, 5 );
-            sensorData.sensors[1] = sqlite3_column_double( res, 6 );
-            sensorData.sensors[2] = sqlite3_column_double( res, 7 );
-            callback( sensorData );
-        }
-        sqlite3_finalize( res );
-
-        log_d( "end" );
     }
 
-    auto process() -> void
+    Filter::Filter( Filter&& other )
     {
-        Utils::bound( std::chrono::minutes( 5 ), Database::generate );
+        this->res = other.res;
+        other.res = nullptr;
+    }
+
+    Filter::~Filter()
+    {
+        if( this->res != nullptr )
+        {
+            sqlite3_finalize( this->res );
+            this->res = nullptr;
+        }
+    }
+
+    auto Filter::next( SensorData* sensorData ) const -> bool
+    {
+        if ( this->res == nullptr )
+        {
+            return false;
+        }
+
+        if( sqlite3_step( this->res ) != SQLITE_ROW )
+        {
+            return false;
+        }
+
+        sensorData->id = sqlite3_column_int64( this->res, 0 );
+        sensorData->dateTime = sqlite3_column_int64( this->res, 1 );
+        sensorData->temperature = sqlite3_column_double( this->res, 2 );
+        sensorData->humidity = sqlite3_column_double( this->res, 3 );
+        sensorData->pressure = sqlite3_column_double( this->res, 4 );
+        sensorData->sensors[0] = sqlite3_column_double( this->res, 5 );
+        sensorData->sensors[1] = sqlite3_column_double( this->res, 6 );
+        sensorData->sensors[2] = sqlite3_column_double( this->res, 7 );
+        return true;
     }
 } // namespace Database

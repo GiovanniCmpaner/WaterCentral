@@ -17,14 +17,8 @@ function drawGraphs(info) {
         var ctx = canvas.getContext("2d");
         ctx.canvas.width = canvas.offsetWidth;
         ctx.canvas.height = canvas.offsetHeight;
-        if (sensor.enabled) {
-            ctx.fillStyle = "blue";
-            ctx.fillRect(0, 0, canvas.offsetWidth * (Math.abs(sensor.percent) / 100), canvas.offsetHeight);
-        }
-        else {
-            ctx.fillStyle = "lightgray";
-            ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
-        }
+        ctx.fillStyle = "blue";
+        ctx.fillRect(0, 0, canvas.offsetWidth * (Math.abs(sensor.percent) / 100), canvas.offsetHeight);
     };
 }
 
@@ -40,20 +34,15 @@ function getInfos() {
     })
         .done((info) => {
 
-            $("#temperature").prop("value", info.temperature);
-            $("#humidity").prop("value", info.humidity);
-            $("#pressure").prop("value", info.pressure);
+            $("#temperature").text(info.temperature);
+            $("#humidity").text(info.humidity);
+            $("#pressure").text(info.pressure);
 
             var template = $($.parseHTML($("#sensor_template").html()));
             for (const [i, sensor] of info.sensors.entries()) {
                 var row = template.clone();
-                row.find("#sensor_number").text(i + 1);
-                if (sensor.enabled) {
-                    row.find("#sensor_value").prop("value", sensor.value);
-                }
-                else {
-                    row.find("#sensor_value").prop("disabled", true);
-                }
+                row.find("#sensor_name").text(sensor.name);
+                row.find("#sensor_value").text(sensor.value);
                 for (var c of row.find("*")) {
                     if (c.id) {
                         c.id += `_${i}`;

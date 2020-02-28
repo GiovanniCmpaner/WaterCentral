@@ -20,19 +20,19 @@
       <tr>
         <td>
           <label for="temperature"> Temperature </label>
-          <input id="temperature" type="number" step="0.01" readonly>
+          <span id="temperature"></span>
         </td>
       </tr>
       <tr>
         <td>
           <label for="humidity"> Humidity </label>
-          <input id="humidity" type="number" step="0.01" readonly>
+          <span id="humidity"></span>
         </td>
       </tr>
       <tr>
         <td>
           <label for="pressure"> Pressure </label>
-          <input id="pressure" type="number" step="0.01" readonly>
+          <span id="pressure"></span>
         </td>
       </tr>
     </table>
@@ -42,7 +42,7 @@
     <table id="sensors" class="responsive">
       <thead>
         <tr>
-          <th> N </th>
+          <th> Name </th>
           <th> Value </th>
           <th> Graph </th>
         </tr>
@@ -51,12 +51,12 @@
         <template id="sensor_template">
           <tr>
             <th>
-              <label for="sensor_number"> N </label>
-              <span id="sensor_number"></span>
+              <label for="sensor_name"> Name </label>
+              <span id="sensor_name"></span>
             </th>
             <td>
               <label for="sensor_value"> Value </label>
-              <input id="sensor_value" type="number" step="any" readonly>
+              <span id="sensor_value"></span>
             </td>
             <td>
               <label for="sensor_graph"> Graph </label>

@@ -1,41 +1,40 @@
 $(document).ready(() => {
     handleFilter();
-
-    getDateTime()
-        .done(getData(buildfilter(), true))
-        .done(() => {
-            handleScroll();
-            clearMessage();
-        });
+    getDateTime().done(() => handleLoadMore());
 });
 
 function handleFilter() {
     $("#filter").submit((event) => {
         event.preventDefault();
         if ($("#filter")[0].checkValidity()) {
-            getData(buildfilter(), true)
-                .done(() => {
-                    handleScroll();
-                    clearMessage();
-                });
+            handleLoadMore();
         }
     });
 }
 
-function handleScroll() {
+function handleDownload() {
+    
+}
+
+function handleLoadMore(withoutFilter) {
     $(window).unbind("scroll");
-    $(window).scroll(() => {
-        if ($(window).height() + $(window).scrollTop() > $("body").height() * 0.75) {
-            $(window).unbind("scroll");
-            getData(null, false)
-                .done((count) => {
-                    if (count > 0) {
-                        handleScroll();
+    clearTimeout(this.updateHandle);
+
+    getData(withoutFilter ? null : buildfilter())
+        .done((count) => {
+            if (count == 20) {
+                $(window).scroll(() => {
+                    if ($(window).height() + $(window).scrollTop() > $("body").height() * 0.75) {
+                        $(window).unbind("scroll");
+                        handleLoadMore(true);
                     }
-                    clearMessage();
                 });
-        }
-    });
+            }
+            else {
+                this.updateHandle = setTimeout(() => handleLoadMore(true), 30000);
+            }
+        })
+        .then(clearMessage);
 }
 
 function getDateTime() {
@@ -57,7 +56,7 @@ function getDateTime() {
                 $("#filter_end_time").val("23:59:59");
 
                 successMessage("Done");
-                deferred.resolve();
+                deferred.resolve(new Date(data.datetime));
             })
             .fail((xhr, status, error) => {
                 errorMessage(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`);
@@ -93,11 +92,15 @@ function buildfilter() {
     return filter;
 }
 
-function getData(filter, clear) {
+function getData(filter) {
     var deferred = new $.Deferred();
 
-    if (filter == null && typeof this.prevFilter != "undefined") {
-        filter = this.prevFilter;
+    var clear = true;
+    if (filter == null) {
+        clear = false;
+        if (typeof this.prevFilter != "undefined") {
+            filter = this.prevFilter;
+        }
     }
 
     $("#filter :input").prop("disabled", true);
@@ -110,30 +113,42 @@ function getData(filter, clear) {
         data: filter
     })
         .done((data) => {
-            this.prevFilter = filter;
-
             if (clear) {
                 $("#result tbody tr").remove();
             }
 
-            var template = $($.parseHTML($("#data_template").html()));
-            for (const d of data) {
-                var row = template.clone();
-                row.prop("id", `data_${d.id}`);
+            let template = $($.parseHTML($("#data_template").html()));
+            for (const [i, d] of data.entries()) {
+                let row = template.clone();
+                let [date, time] = d.datetime.split(" ");
                 row.find("#data_id").text(d.id);
-                row.find("#data_datetime").text(d.datetime);
+                row.find("#data_date").text(date);
+                row.find("#data_time").text(time);
                 row.find("#data_temperature").text(d.temperature);
                 row.find("#data_humidity").text(d.humidity);
                 row.find("#data_pressure").text(d.pressure);
                 row.find("#data_sensor_0").text(d.sensors[0]);
                 row.find("#data_sensor_1").text(d.sensors[1]);
                 row.find("#data_sensor_2").text(d.sensors[2]);
+                for (let c of row.find("*")) {
+                    if (c.id) {
+                        c.id += `_${i}`;
+                    }
+                    if (c.htmlFor) {
+                        c.htmlFor += `_${i}`;
+                    }
+                }
                 row.appendTo($("#result tbody"));
             }
 
-            var lastRow = $("#result tbody tr:last");
-            if (lastRow) {
-                this.prevFilter.id = parseInt(lastRow.find("#data_id").text()) + 1;
+            this.prevFilter = filter;
+            if (data.length > 0) {
+                if (this.prevFilter != null) {
+                    this.prevFilter.id = data[data.length - 1].id + 1;
+                }
+                else {
+                    this.prevFilter = { id: data[data.length - 1].id + 1 };
+                }
             }
 
             successMessage("Done");
