@@ -104,7 +104,7 @@ namespace WebInterface
             {
                 auto filter{ WebInterface::buildFilter( request )};
                 Database::SensorData sensorData;
-                while( filter.next( &sensorData ) )
+                for ( auto n{0}; n < 20 and filter.next( &sensorData ); ++n )
                 {
                     auto element{responseJson.addElement()};
                     sensorData.serialize( element );
@@ -157,9 +157,20 @@ namespace WebInterface
             handleProgmem( request, "application/javascript", data_js_start, static_cast<size_t>( data_js_end - data_js_start ) );
         }
 
+        class comma_punct : public std::numpunct<char>
+        {
+            protected:
+                char do_decimal_point() const override
+                {
+                    return ',';   //comma
+                }
+        };
+        std::locale loc{ std::locale{}, new comma_punct };
+
         static auto handleDataCsv( AsyncWebServerRequest* request ) -> void
         {
             auto stream{std::make_shared<std::stringstream>()};
+            stream->imbue( std::locale( "en_US.utf8" ) );
             auto filter{std::make_shared<Database::Filter>( WebInterface::buildFilter( request ) )};
             auto response{request->beginChunkedResponse( "text/csv", [ = ]( uint8_t* buffer, size_t maxLen, size_t index ) -> size_t {
                     auto len{stream->readsome( reinterpret_cast<char*>( buffer ), maxLen )};
@@ -183,7 +194,7 @@ namespace WebInterface
                             if( filter->next( &sensorData ) )
                             {
                                 ( *stream ) << sensorData.id << ';'
-                                            << sensorData.dateTime << ';'
+                                            << Utils::DateTime::toString( std::chrono::system_clock::from_time_t( sensorData.dateTime ) ) << ';'
                                             << sensorData.temperature << ';'
                                             << sensorData.humidity << ';'
                                             << sensorData.pressure << ';'

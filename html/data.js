@@ -1,4 +1,13 @@
 $(document).ready(() => {
+
+    $("#filter_button").click((event) => {
+        $("#filter").prop("action", "filter");
+    });
+
+    $("#filter_download").click((event) => {
+        $("#filter").prop("action", "download");
+    });
+
     handleFilter();
     getDateTime().done(() => handleLoadMore());
 });
@@ -7,13 +16,24 @@ function handleFilter() {
     $("#filter").submit((event) => {
         event.preventDefault();
         if ($("#filter")[0].checkValidity()) {
-            handleLoadMore();
+            if ($("#filter").prop("action").endsWith("filter")) {
+                handleLoadMore();
+            }
+            else if ($("#filter").prop("action").endsWith("download")) {
+                handleDownload();
+            }
         }
     });
 }
 
 function handleDownload() {
-    
+    var filter = buildfilter();
+    if (filter) {
+        window.location = `http://192.168.1.200/data.csv`;
+    }
+    else {
+        window.location = `http://192.168.1.200/data.csv?${URLSearchParams(filter).toString()}`;
+    }
 }
 
 function handleLoadMore(withoutFilter) {
@@ -89,7 +109,12 @@ function buildfilter() {
     else {
         delete filter.end;
     }
-    return filter;
+    if (Object.values(filter).length > 0) {
+        return filter;
+    }
+    else {
+        return null;
+    }
 }
 
 function getData(filter) {

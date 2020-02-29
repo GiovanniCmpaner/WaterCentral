@@ -182,8 +182,7 @@ namespace Database
             "WHERE                                        "
             "        ( ID >= IFNULL(?,ID) )               "
             "    AND ( DATE_TIME >= IFNULL(?,DATE_TIME) ) "
-            "    AND ( DATE_TIME <= IFNULL(?,DATE_TIME) ) "
-            "LIMIT 20                                     "};
+            "    AND ( DATE_TIME <= IFNULL(?,DATE_TIME) ) "};
 
         const auto rc{sqlite3_prepare_v2( db, query, strlen( query ), &this->res, nullptr )};
         if ( rc != SQLITE_OK )
