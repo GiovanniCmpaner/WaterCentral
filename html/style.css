@@ -4,15 +4,7 @@ html {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-nav {
-  position: sticky;
-  top: 0;
-  padding: 0.5em;
-  background-color: #9e9e9e;
-  display: none;
-}
-
-table { 
+table {
   min-width: 22em;
 }
 
@@ -25,13 +17,29 @@ span {
 }
 
 table label {
-  display: inline-block;
-  width: 4.5em;
+  display: table-cell;
 }
 
 table input, table select, table span {
   display: inline-block;
   width: 9em;
+}
+
+#message {
+  position: sticky;
+  top: 0;
+  padding: 0.4em;
+  display: none;
+  margin-bottom: 0.4em;
+}
+
+#menu {
+  padding-bottom: 0.4em;
+  border-bottom: 0.15em groove rgb(227, 227, 227);
+}
+
+#menu a {
+  padding: 0.4em;
 }
 
 /***************************************************/
@@ -72,13 +80,39 @@ table input, table select, table span {
   .responsive label, .responsive tr, .responsive td {
     display: inline-block;
   }
-  .responsive tr:not(:first-child){
+  .responsive tr:not(:first-child) {
     padding-top: 1em;
   }
   .responsive tr:not(:last-child) {
     padding-bottom: 1em;
-    border-bottom: 2px groove rgb(227, 227, 227);
+    border-bottom: 0.15em groove rgb(227, 227, 227);
   }
 }
 
 /***************************************************/
+
+#infos canvas {
+  width: 100%;
+  min-width: 6em;
+  min-width: 22em;
+  height: 1.2em;
+  border: 1px solid black;
+  padding: 0.15em;
+  display: inline-block;
+}
+
+/***************************************************/
+
+.grid {
+  display: inline-grid;
+  grid-template-columns: repeat(2, auto);
+  grid-gap: 0.25em;
+}
+
+.grid input, .grid select, .grid label, .grid span {
+  padding: 0.2em;
+}
+
+#values.grid {
+  grid-template-columns: repeat(3, auto);
+}

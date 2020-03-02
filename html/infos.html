@@ -11,61 +11,45 @@
   <title>WaterCentral - Infos</title>
 </head>
 
-<body>
+<body id="infos">
   <nav id="message"></nav>
+  <nav id="menu">
+    <a href="/configuration.html">Configuration</a>
+    <a href="/infos.html">Infos</a>
+    <a href="/data.html">Data</a>
+  </nav>
   <h2> Infos </h2>
   <fieldset>
     <legend> Environment </legend>
-    <table id="environment">
-      <tr>
-        <td>
-          <label for="temperature"> Temperature </label>
-          <span id="temperature"></span>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="humidity"> Humidity </label>
-          <span id="humidity"></span>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label for="pressure"> Pressure </label>
-          <span id="pressure"></span>
-        </td>
-      </tr>
-    </table>
+    <div class="grid" id="environment">
+      <label for="temperature"> Temperature (°C) </label>
+      <span id="temperature"></span>
+
+      <label for="humidity"> Humidity (%) </label>
+      <span id="humidity"></span>
+
+      <label for="pressure"> Pressure (hPa) </label>
+      <span id="pressure"></span>
+    </div>
   </fieldset>
   <fieldset>
     <legend> Sensors </legend>
-    <table id="sensors" class="responsive">
-      <thead>
-        <tr>
-          <th> Name </th>
-          <th> Value </th>
-          <th> Graph </th>
-        </tr>
-      </thead>
-      <tbody>
-        <template id="sensor_template">
-          <tr>
-            <th>
-              <label for="sensor_name"> Name </label>
-              <span id="sensor_name"></span>
-            </th>
-            <td>
-              <label for="sensor_value"> Value </label>
-              <span id="sensor_value"></span>
-            </td>
-            <td>
-              <label for="sensor_graph"> Graph </label>
-              <canvas id="sensor_graph" style="width: 20em; height: 1.2em; border: 1px solid black; padding: 0.15em; display: block;"> </canvas>
-            </td>
-          </tr>
-        </template>
-      </tbody>
-    </table>
+    <div id="values" class="grid responsive">
+      <span> Name </span>
+      <span> Value (kPa) </span>
+      <span> Graph </span>
+
+      <template id="sensor_template">
+        <label for="sensor_name"> Name </label>
+        <span id="sensor_name"></span>
+
+        <label for="sensor_value"> Value (kPa) </label>
+        <span id="sensor_value"></span>
+
+        <label for="sensor_graph"> Graph </label>
+        <canvas id="sensor_graph"></canvas>
+      </template>
+    </div>
   </fieldset>
 </body>
 

@@ -1,25 +1,17 @@
 $(document).ready(() => {
 
-    getInfos().done(drawGraphs).done(clearMessage);
-    //for(var c of $("canvas"))
-    //{
-    //    var ctx = c.getContext("2d");
-    //    ctx.canvas.width = c.offsetWidth;
-    //    ctx.canvas.height = c.offsetHeight;
-    //    ctx.fillStyle = "red";
-    //    ctx.fillRect(0,0,c.offsetWidth,c.offsetHeight);
-    //}
+    getInfos().then((info) => drawGraphs(info)).then(() => clearMessage());
 });
 
 function drawGraphs(info) {
-    for (const [i, sensor] of info.sensors.entries()) {
-        var canvas = document.getElementById(`sensor_graph_${i}`);
-        var ctx = canvas.getContext("2d");
-        ctx.canvas.width = canvas.offsetWidth;
-        ctx.canvas.height = canvas.offsetHeight;
-        ctx.fillStyle = "blue";
-        ctx.fillRect(0, 0, canvas.offsetWidth * (Math.abs(sensor.percent) / 100), canvas.offsetHeight);
-    };
+    //for (const [i, sensor] of info.sensors.entries()) {
+    //    var canvas = document.getElementById(`sensor_graph_${i}`);
+    //    var ctx = canvas.getContext("2d");
+    //    //ctx.canvas.width = canvas.offsetWidth;
+    //    //ctx.canvas.height = canvas.offsetHeight;
+    //    ctx.fillStyle = "blue";
+    //    ctx.fillRect(0, 0, canvas.offsetWidth * (Math.min(Math.max(sensor.percent, 0.0), 100.0) / 100.0), canvas.offsetHeight);
+    //};
 }
 
 function getInfos() {
@@ -34,16 +26,27 @@ function getInfos() {
     })
         .done((info) => {
 
-            $("#temperature").text(info.temperature);
-            $("#humidity").text(info.humidity);
-            $("#pressure").text(info.pressure);
+            if (!info.temperature || !info.humidity || !info.pressure) {
+                $("#temperature").prop("class", "error").text("ERROR");
+                $("#humidity").prop("class", "error").text("ERROR");
+                $("#pressure").prop("class", "error").text("ERROR");
+            }
+            else {
+                $("#temperature").removeProp("class").text(info.temperature);
+                $("#humidity").removeProp("class").text(info.humidity);
+                $("#pressure").removeProp("class").text(info.pressure);
+            }
 
             var template = $($.parseHTML($("#sensor_template").html()));
             for (const [i, sensor] of info.sensors.entries()) {
                 var row = template.clone();
-                row.find("#sensor_name").text(sensor.name);
-                row.find("#sensor_value").text(sensor.value);
-                for (var c of row.find("*")) {
+                for (var c of row) {
+                    if (c.id == "sensor_name") {
+                        c.textContent = sensor.name;
+                    }
+                    else if (c.id == "sensor_value") {
+                        c.textContent = sensor.value;
+                    }
                     if (c.id) {
                         c.id += `_${i}`;
                     }
@@ -51,7 +54,7 @@ function getInfos() {
                         c.htmlFor += `_${i}`;
                     }
                 }
-                row.appendTo($("#sensors tbody"));
+                row.appendTo($("#values.grid"));
             }
 
             successMessage("Done");

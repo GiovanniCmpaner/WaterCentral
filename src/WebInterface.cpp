@@ -59,10 +59,6 @@ namespace WebInterface
             end = Utils::DateTime::fromString( request->getParam( "end" )->value().c_str() );
         }
 
-        log_d( "id = %ld", id );
-        log_d( "start = %s", Utils::DateTime::toString( start ).data() );
-        log_d( "end = %s", Utils::DateTime::toString( end ).data() );
-
         return Database::Filter{id, start, end};
     }
 
@@ -88,7 +84,7 @@ namespace WebInterface
         static auto handleConfigurationJson( AsyncWebServerRequest* request ) -> void
         {
             auto response{new AsyncJsonResponse{false, 2048}};
-            auto responseJson{response->getRoot()};
+            auto& responseJson{response->getRoot()};
 
             cfg.serialize( responseJson );
 
@@ -99,7 +95,7 @@ namespace WebInterface
         static auto handleDataJson( AsyncWebServerRequest* request ) -> void
         {
             auto response{new AsyncJsonResponse{true, 4096}};
-            auto responseJson{response->getRoot()};
+            auto& responseJson{response->getRoot()};
 
             {
                 auto filter{ WebInterface::buildFilter( request )};
@@ -118,9 +114,9 @@ namespace WebInterface
         static auto handleDateTimeJson( AsyncWebServerRequest* request ) -> void
         {
             auto response{new AsyncJsonResponse{}};
-            auto responseJson{response->getRoot()};
+            auto& responseJson{response->getRoot()};
 
-            responseJson["datetime"] = Utils::DateTime::toString( std::chrono::system_clock::now() );
+            responseJson.set( Utils::DateTime::toString( std::chrono::system_clock::now() ) );
 
             response->setLength();
             request->send( response );
@@ -129,7 +125,7 @@ namespace WebInterface
         static auto handleInfosJson( AsyncWebServerRequest* request ) -> void
         {
             auto response{new AsyncJsonResponse{}};
-            auto responseJson{response->getRoot()};
+            auto& responseJson{response->getRoot()};
 
             Infos::serialize( responseJson );
 
@@ -170,7 +166,7 @@ namespace WebInterface
         static auto handleDataCsv( AsyncWebServerRequest* request ) -> void
         {
             auto stream{std::make_shared<std::stringstream>()};
-            stream->imbue( std::locale( "en_US.utf8" ) );
+            stream->imbue( loc );
             auto filter{std::make_shared<Database::Filter>( WebInterface::buildFilter( request ) )};
             auto response{request->beginChunkedResponse( "text/csv", [ = ]( uint8_t* buffer, size_t maxLen, size_t index ) -> size_t {
                     auto len{stream->readsome( reinterpret_cast<char*>( buffer ), maxLen )};
@@ -238,17 +234,36 @@ namespace WebInterface
     {
         static auto handleConfigurationJson( AsyncWebServerRequest* request, JsonVariant& requestJson ) -> void
         {
-            cfg.deserialize( requestJson );
-            Configuration::save( cfg );
-            request->send( 204 );
+            auto response{new AsyncJsonResponse{}};
+            auto& responseJson{response->getRoot()};
+
+            auto newCfg{cfg};
+            newCfg.deserialize( requestJson );
+            Configuration::save( newCfg );
+
+            responseJson.set( "Configuration saved, restarting in 3 seconds" );
+            response->setLength();
+            request->send( response );
+
+            delay( 3000 );
+            esp_restart();
         }
 
         static auto handleDateTimeJson( AsyncWebServerRequest* request, JsonVariant& requestJson ) -> void
         {
-            const auto dateTime{Utils::DateTime::fromString( requestJson["datetime"] )};
+            auto response{new AsyncJsonResponse{}};
+            auto& responseJson{response->getRoot()};
+
+            const auto dateTime{Utils::DateTime::fromString( requestJson.as<std::string>() )};
             RealTime::adjustDateTime( dateTime );
 
-            request->send( 204 );
+            responseJson.set( "DateTime saved, restarting in 3 seconds" );
+            response->setLength();
+            request->send( response );
+
+            delay( 3000 );
+            esp_restart();
+
         }
     } // namespace Post
 

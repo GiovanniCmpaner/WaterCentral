@@ -49,16 +49,17 @@ struct Configuration
             MPX5700
         };
 
+        struct Calibration
+        {
+            double angularCoefficient;
+            double linearCoefficient;
+            double zeroOffset;
+        };
+
         struct Alarm
         {
             bool enabled;
             double value;
-        };
-
-        struct Calibration
-        {
-            double factor;
-            double offset;
         };
 
         bool enabled;
@@ -76,11 +77,11 @@ struct Configuration
     std::array<Sensor, 3> sensors;
 
     static auto init() -> void;
-    static auto load(Configuration *cfg) -> void;
-    static auto save(const Configuration &cfg) -> void;
+    static auto load( Configuration* cfg ) -> void;
+    static auto save( const Configuration& cfg ) -> void;
 
-    auto serialize(ArduinoJson::JsonVariant &json) const -> void;
-    auto deserialize(const ArduinoJson::JsonVariant &json) -> void;
+    auto serialize( ArduinoJson::JsonVariant& json ) const -> void;
+    auto deserialize( const ArduinoJson::JsonVariant& json ) -> void;
 };
 
 extern Configuration cfg;

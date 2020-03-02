@@ -50,7 +50,7 @@ namespace Peripherals
                 BACKLIGHT = 3,
             };
         }
-        
+
     }; // namespace LCD
 
     namespace DS3231
@@ -69,8 +69,8 @@ namespace Peripherals
         enum Pins
         {
             VOUT_1 = 33,
-            VOUT_2 = 35,
-            VOUT_3 = 32
+            VOUT_2 = 32,
+            VOUT_3 = 35
         };
     };
 

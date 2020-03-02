@@ -125,18 +125,15 @@ namespace Display
         }
     }
 
-    static auto button() -> void
+    auto ignore() -> void
     {
-        if ( digitalRead( Peripherals::Pins::BTN ) == LOW )
-        {
-            digitalWrite( Peripherals::Pins::WRN_BZR, LOW );
+        digitalWrite( Peripherals::Pins::WRN_BZR, LOW );
 
-            for ( uint8_t n = 0; n < states.size(); n++ )
-            {
-                states[n].warningBuzzer = false;
-            }
-            ignoreTimer = std::chrono::system_clock::now() + std::chrono::minutes( 10 );
+        for ( uint8_t n = 0; n < states.size(); n++ )
+        {
+            states[n].warningBuzzer = false;
         }
+        ignoreTimer = std::chrono::system_clock::now() + std::chrono::minutes( 10 );
     }
 
     static auto warning() -> void
@@ -191,6 +188,5 @@ namespace Display
         Utils::periodic( std::chrono::milliseconds( 250 ), Display::check );
         Utils::periodic( std::chrono::milliseconds( 500 ), Display::update );
         Utils::periodic( std::chrono::milliseconds( 750 ), Display::warning );
-        Utils::periodic( std::chrono::milliseconds( 50 ), Display::button );
     }
 } // namespace Display

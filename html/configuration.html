@@ -13,9 +13,119 @@
 
 <body>
   <nav id="message"></nav>
+  <nav id="menu">
+    <a href="/configuration.html">Configuration</a>
+    <a href="/infos.html">Infos</a>
+    <a href="/data.html">Data</a>
+  </nav>
   <h2> Configuration </h2>
-  <form id="configuration" readonly>
-    <fieldset id="access_point">
+  <form id="sensors">
+    <fieldset>
+      <legend>Sensors</legend>
+      <table class="responsive">
+        <thead>
+          <tr>
+            <th rowspan="2"> N </th>
+            <th rowspan="2"> Enabled </th>
+            <th rowspan="2"> Name </th>
+            <th rowspan="2"> Type </th>
+            <th rowspan="2"> Min (kPa) </th>
+            <th rowspan="2"> Max (kPa) </th>
+            <th rowspan="1" colspan="3"> Calibration </th>
+            <th rowspan="1" colspan="2"> Alarm </th>
+          </tr>
+          <tr>
+            <th> Angular Coefficient </th>
+            <th> Linear Coefficient </th>
+            <th> Zero Offset (kPa) </th>
+            <th> Enabled </th>
+            <th> Value (%) </th>
+          </tr>
+        </thead>
+        <tbody>
+          <template id="sensor_template">
+            <tr>
+              <th>
+                <label for="sensor_number">N</label>
+                <span id="sensor_number"></span>
+              </th>
+              <td>
+                <label for="sensor_enabled">Enabled</label>
+                <input type="checkbox" id="sensor_enabled">
+              </td>
+              <td>
+                <label for="sensor_name">Name</label>
+                <input type="text" id="sensor_name" required>
+              </td>
+              <td>
+                <label for="sensor_type">Type</label>
+                <select id="sensor_type" required>
+                  <option disabled selected value hidden></option>
+                  <option value="0">MPX5050</option>
+                  <option value="1">MPX5100</option>
+                  <option value="2">MPX5500</option>
+                  <option value="3">MPX5700</option>
+                </select>
+              </td>
+              <td>
+                <label for="sensor_min"> Min (kPa) </label>
+                <input type="number" id="sensor_min" step="any" required>
+              </td>
+              <td>
+                <label for="sensor_max"> Max (kPa) </label>
+                <input type="number" id="sensor_max" step="any" required>
+              </td>
+              <td>
+                <label for="sensor_calibration_angular_coefficient"> Calibration Angular Coefficient </label>
+                <input type="number" id="sensor_calibration_angular_coefficient" min="0" max="+999" step="any" required>
+              </td>
+              <td>
+                <label for="sensor_calibration_linear_coefficient"> Calibration Linear Coefficient </label>
+                <input type="number" id="sensor_calibration_linear_coefficient" min="-999" max="+999" step="any" required>
+              </td>
+              <td>
+                <label for="sensor_calibration_zero_offset"> Zero Offset (kPa) </label>
+                <input type="number" id="sensor_calibration_zero_offset" min="-999" max="+999" step="any" required>
+              </td>
+              <td>
+                <label for="sensor_alarm_enabled"> Alarm Enabled </label>
+                <input type="checkbox" id="sensor_alarm_enabled">
+              </td>
+              <td>
+                <label for="sensor_alarm_value"> Alarm Value (%) </label>
+                <input type="number" id="sensor_alarm_value" min="0" max="100" step="any" required>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+      <input type="submit" value="Save">
+    </fieldset>
+  </form>
+  <form id="datetime">
+    <fieldset>
+      <legend> DateTime </legend>
+      <table>
+        <tr>
+          <td>
+            <label for="datetime_current_date"> Current </label>
+            <input type="date" id="datetime_current_date" readonly>
+            <input type="time" id="datetime_current_time" step="1" readonly>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label for="datetime_new_date"> New </label>
+            <input type="date" id="datetime_new_date">
+            <input type="time" id="datetime_new_time" step="1">
+          </td>
+        </tr>
+      </table>
+      <input type="submit" value="Save">
+    </fieldset>
+  </form>
+  <form id="access_point">
+    <fieldset>
       <legend> Access Point </legend>
       <table>
         <tr>
@@ -73,8 +183,11 @@
           </td>
         </tr>
       </table>
+      <input type="submit" value="Save">
     </fieldset>
-    <fieldset id="station">
+  </form>
+  <form id="station">
+    <fieldset>
       <legend>Station</legend>
       <table>
         <tr>
@@ -126,8 +239,11 @@
           </td>
         </tr>
       </table>
+      <input type="submit" value="Save">
     </fieldset>
-    <fieldset id="auto_sleep_wakeup">
+  </form>
+  <form id="auto_sleep_wakeup">
+    <fieldset>
       <legend>Auto Sleep & WakeUp</legend>
       <table>
         <tr>
@@ -139,93 +255,18 @@
         <tr>
           <td>
             <label for="auto_sleep_wakeup_sleep_time">Sleep</label>
-            <input type="time" id="auto_sleep_wakeup_sleep_time" step="1" required>
+            <input type="time" id="auto_sleep_wakeup_sleep_time" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="auto_sleep_wakeup_wakeup_time">WakeUp</label>
-            <input type="time" id="auto_sleep_wakeup_wakeup_time" step="1" required>
+            <input type="time" id="auto_sleep_wakeup_wakeup_time" required>
           </td>
         </tr>
       </table>
+      <input type="submit" value="Save">
     </fieldset>
-    <fieldset>
-      <legend>Sensors</legend>
-      <table id="sensors" class="responsive">
-        <thead>
-          <tr>
-            <th rowspan="2"> N </th>
-            <th rowspan="2"> Enabled </th>
-            <th rowspan="2"> Name </th>
-            <th rowspan="2"> Type </th>
-            <th rowspan="2"> Min </th>
-            <th rowspan="2"> Max </th>
-            <th rowspan="1" colspan="2"> Calibration </th>
-            <th rowspan="1" colspan="2"> Alarm </th>
-          </tr>
-          <tr>
-            <th> Factor </th>
-            <th> Offset </th>
-            <th> Enabled </th>
-            <th> Value </th>
-          </tr>
-        </thead>
-        <tbody>
-          <template id="sensor_template">
-            <tr>
-              <th>
-                <label for="sensors_number">N</label>
-                <span id="sensors_number"></span>
-              </th>
-              <td>
-                <label for="sensors_enabled">Enabled</label>
-                <input type="checkbox" id="sensors_enabled">
-              </td>
-              <td>
-                <label for="sensors_name">Name</label>
-                <input type="text" id="sensors_name" required>
-              </td>
-              <td>
-                <label for="sensors_type">Type</label>
-                <select id="sensors_type" required>
-                  <option disabled selected value hidden></option>
-                  <option value="0">MPX5050</option>
-                  <option value="1">MPX5100</option>
-                  <option value="2">MPX5500</option>
-                  <option value="3">MPX5700</option>
-                </select>
-              </td>
-              <td>
-                <label for="sensors_min">Min</label>
-                <input type="number" id="sensors_min" step="any" required>
-              </td>
-              <td>
-                <label for="sensors_max">Max</label>
-                <input type="number" id="sensors_max" step="any" required>
-              </td>
-              <td>
-                <label for="sensors_calibration_factor">Calibration Factor</label>
-                <input type="number" id="sensors_calibration_factor" step="any" required>
-              </td>
-              <td>
-                <label for="sensors_calibration_offset">Calibration Offset</label>
-                <input type="number" id="sensors_calibration_offset" step="any" required>
-              </td>
-              <td>
-                <label for="sensors_alarm_enabled">Alarm Enabled</label>
-                <input type="checkbox" id="sensors_alarm_enabled">
-              </td>
-              <td>
-                <label for="sensors_alarm_value">Alarm Value</label>
-                <input type="number" id="sensors_alarm_value" step="any" required>
-              </td>
-            </tr>
-          </template>
-        </tbody>
-      </table>
-    </fieldset>
-    <input type="submit">
   </form>
 </body>
 

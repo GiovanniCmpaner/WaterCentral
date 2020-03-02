@@ -8,6 +8,7 @@
 #include <Wire.h>
 #include <BME280I2C.h>
 #include <esp_pthread.h>
+#include <map>
 
 #include "Configuration.hpp"
 #include "Display.hpp"
@@ -17,45 +18,9 @@
 
 namespace Infos
 {
-    //-----------------------------------------------------------------------------------
-    //namespace SampleCalculus
-    //{
-    //    constexpr auto fullScaleVoltage{3.9};
-    //    constexpr auto fullScaleReading{4095};
-    //    constexpr auto voltageReadingFactor{fullScaleVoltage / fullScaleReading};
-    //-----------------------------------------------------------------------------------
-    //    constexpr auto dividerR1{4700};
-    //    constexpr auto dividerR2{10000};
-    //    constexpr auto divideVoltage(double inputVoltage) -> double
-    //    {
-    //        return (inputVoltage * dividerR2) / (dividerR1 + dividerR2);
-    //    }
-    //-----------------------------------------------------------------------------------
-    //
-    //    constexpr auto zeroOffsetVoltage{0.2};
-    //    constexpr auto sensitivityVoltage{0.045};
-    //    constexpr auto scaledZeroOffetVoltage{divideVoltage(zeroOffsetVoltage)};
-    //    constexpr auto scaledSensitivityVoltage{divideVoltage(sensitivityVoltage)};
-    //    constexpr auto scaledSensitivityVoltage{divideVoltage(sensitivityVoltage)};
-    //    constexpr auto scaledSensitivityVoltage{divideVoltage(sensitivityVoltage)};
-    //-----------------------------------------------------------------------------------
-    //    constexpr auto finalFactor{ voltageReadingFactor / scaledSensitivityVoltage };
-    //    constexpr auto finalOffset{ scaledZeroOffetVoltage / scaledSensitivityVoltage };
-    //-----------------------------------------------------------------------------------
-    //    constexpr auto convertReading(uint16_t reading) -> double
-    //    {
-    //        return reading * finalFactor - finalOffset;
-    //    }
-    //-----------------------------------------------------------------------------------
-    //    static constexpr auto sampleValue{convertReading(2048)};
-    //}; // namespace SampleCalculus
-    //-----------------------------------------------------------------------------------
-
     struct Info
     {
         uint8_t pin;
-        double factor;
-        double offset;
         double value;
         ResponsiveAnalogRead analogRead;
     };
@@ -64,17 +29,14 @@ namespace Infos
     static std::array<Info, 3> infos
     {
         {
-            {Peripherals::MPX_DP::VOUT_1, 1.0, 0.0, NAN},
-            {Peripherals::MPX_DP::VOUT_2, 1.0, 0.0, NAN},
-            {Peripherals::MPX_DP::VOUT_3, 1.0, 0.0, NAN}
+            {Peripherals::MPX_DP::VOUT_1},
+            {Peripherals::MPX_DP::VOUT_2},
+            {Peripherals::MPX_DP::VOUT_3}
         }
     };
     static float pressure{NAN};
     static float temperature{NAN};
     static float humidity{NAN};
-
-    static constexpr std::array<double, 4> factors{0.0155555555555556, 0.0311111111111111, 0.1555555555555556, 0.2187500000000000};
-    static constexpr std::array<double, 4> offsets{2.2222222222222223, 4.4444444444444446, 22.2222222222222250, 31.2500000000000036};
 
     static auto update() -> void
     {
@@ -83,40 +45,43 @@ namespace Infos
         {
             if( cfg.sensors[n].enabled )
             {
+                static constexpr std::array<double, 4> sensorsSensivity{0.0900, 0.0450, 0.0090, 0.0064};
+                static constexpr std::array<double, 4> sensorsZeroOffset{-0.2000, -0.2000, -0.2000, -0.2000};
+
                 infos[n].analogRead.update();
-                const auto rawValue{ infos[n].analogRead.getValue()* infos[n].factor - infos[n].offset };
-                const auto calibratedValue{ rawValue* cfg.sensors[n].calibration.factor - cfg.sensors[n].calibration.offset };
-                infos[n].value = calibratedValue;
+                const auto rawRead{infos[n].analogRead.getValue()};
+                const auto calibratedRead{ rawRead* cfg.sensors[n].calibration.angularCoefficient + cfg.sensors[n].calibration.linearCoefficient };
+                const auto sensorValue{ ( ( calibratedRead + sensorsZeroOffset[cfg.sensors[n].type] ) / sensorsSensivity[cfg.sensors[n].type] ) + cfg.sensors[n].calibration.zeroOffset };
+                infos[n].value = sensorValue;
             }
         }
     }
 
     auto getSensor( uint8_t index ) -> double
     {
-        return infos[index].value;
+        return ( round( infos[index].value * 100 ) / 100 );
     }
 
     auto getPressure() -> double
     {
-        return pressure;
+        return ( round( pressure * 100 ) / 100 );
     }
 
     auto getTemperature() -> double
     {
-        return temperature;
+        return ( round( temperature * 100 ) / 100 );
     }
 
     auto getHumidity() -> double
     {
-        return humidity;
+        return ( round( humidity * 100 ) / 100 );
     }
 
     auto init() -> void
     {
         if( not bme.begin() )
         {
-            log_e( "bme error" );
-            std::abort();
+            log_d( "bme error" );
         }
 
         for ( auto n{0}; n < infos.size(); ++n )
@@ -124,22 +89,21 @@ namespace Infos
             if( cfg.sensors[n].enabled )
             {
                 infos[n].analogRead.begin( infos[n].pin, false );
-                infos[n].factor = factors[cfg.sensors[n].type];
-                infos[n].offset = offsets[cfg.sensors[n].type];
+                infos[n].analogRead.setAnalogResolution( 4096 );
             }
         }
     }
 
     auto process() -> void
     {
-        Utils::periodic( std::chrono::seconds( 500 ), Infos::update );
+        Utils::periodic( std::chrono::milliseconds( 500 ), Infos::update );
     }
 
     auto serialize( ArduinoJson::JsonVariant& json ) -> void
     {
-        json["temperature"] = Infos::temperature;
-        json["humidity"] = Infos::humidity;
-        json["pressure"] = Infos::pressure;
+        json["temperature"] = Infos::getTemperature();
+        json["humidity"] = Infos::getHumidity();
+        json["pressure"] = Infos::getPressure();
         {
             auto sensors{ json["sensors"] };
             for ( auto n{0}; n < Infos::infos.size(); ++n )
@@ -149,8 +113,8 @@ namespace Infos
                     auto sensor{ sensors.addElement() };
 
                     sensor["name"] = cfg.sensors[n].name;
-                    sensor["value"] = Infos::infos[n].value;
-                    sensor["percent"] = map( Infos::infos[n].value, cfg.sensors[n].min, cfg.sensors[n].max, 0.0, 100.0 );
+                    sensor["value"] = Infos::getSensor( n );
+                    sensor["percent"] = map( Infos::getSensor( n ), cfg.sensors[n].min, cfg.sensors[n].max, 0.0, 100.0 );
                 }
             }
         }

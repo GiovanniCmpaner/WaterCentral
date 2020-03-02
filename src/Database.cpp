@@ -99,9 +99,6 @@ namespace Database
 
     static auto insert( const SensorData& sensorData ) -> int64_t
     {
-        int64_t id{};
-        log_d( "begin" );
-
         const auto query
         {
             "INSERT INTO SENSORS_DATA ( "
@@ -138,10 +135,10 @@ namespace Database
                 //std::abort();
             }
             sqlite3_finalize( res );
-            id = sqlite3_last_insert_rowid( db );
+            return sqlite3_last_insert_rowid( db );
         }
-        log_d( "end" );
-        return id;
+
+        return 0;
     }
 
     static auto generate() -> void

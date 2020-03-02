@@ -1,19 +1,77 @@
 $(document).ready(() => {
     handleConfiguration();
 
-    getConfiguration().done(() => clearMessage());
+    getDateTime().then(() => getConfiguration()).then(() => clearMessage());
 });
 
-function handleConfiguration(){
-    $("#configuration").submit((event) => {
+function handleConfiguration() {
+    $("#sensors").submit((event) => {
         event.preventDefault();
-        if ($("#configuration")[0].checkValidity()) {
-            setConfiguration();
+        if ($("#sensors")[0].checkValidity()) {
+            setSensors().then(() => clearMessage());
+        }
+    });
+
+    $("#datetime").submit((event) => {
+        event.preventDefault();
+        if ($("#datetime")[0].checkValidity()) {
+            setDateTime().then(() => clearMessage());
+        }
+    });
+
+    $("#access_point").submit((event) => {
+        event.preventDefault();
+        if ($("#access_point")[0].checkValidity()) {
+            setAccessPoint().then(() => clearMessage());
+        }
+    });
+
+    $("#station").submit((event) => {
+        event.preventDefault();
+        if ($("#station")[0].checkValidity()) {
+            setStation().then(() => clearMessage());
+        }
+    });
+
+    $("#auto_sleep_wakeup").submit((event) => {
+        event.preventDefault();
+        if ($("#auto_sleep_wakeup")[0].checkValidity()) {
+            setAutoSleepWakeUp().then(() => clearMessage());
         }
     });
 }
 
-function setConfiguration() {
+function setSensors() {
+    var cfg = {
+        sensors: []
+    };
+
+    $("#sensors tbody tr").each((i, s) => {
+        cfg.sensors.push({
+            enabled: $(`#sensor_enabled_${i}`).prop("checked"),
+            name: $(`#sensor_name_${i}`).prop("value"),
+            type: parseInt($(`#sensor_type_${i}`).prop("value")),
+            min: parseFloat($(`#sensor_min_${i}`).prop("value")),
+            max: parseFloat($(`#sensor_max_${i}`).prop("value")),
+            calibration: {
+                factor: parseFloat($(`#sensor_calibration_factor_${i}`).prop("value")),
+                offset: parseFloat($(`#sensor_calibration_offset_${i}`).prop("value"))
+            },
+            alarm: {
+                enabled: $(`#sensor_alarm_enabled_${i}`).prop("checked"),
+                value: parseFloat($(`#sensor_alarm_value_${i}`).prop("value"))
+            }
+        });
+    });
+
+    return setConfiguration(cfg);
+}
+
+function setDateTime() {
+
+}
+
+function setAccessPoint() {
     var cfg = {
         access_point: {
             enabled: $("#access_point_enabled").prop("checked"),
@@ -21,75 +79,80 @@ function setConfiguration() {
             ip: $("#access_point_ip").prop("value").split(".").map((s) => parseInt(s, 10)),
             netmask: $("#access_point_netmask").prop("value").split(".").map((s) => parseInt(s, 10)),
             gateway: $("#access_point_gateway").prop("value").split(".").map((s) => parseInt(s, 10)),
-            port: $("#access_point_port").prop("value"),
+            port: parseInt($("#access_point_port").prop("value"), 10),
             user: $("#access_point_user").prop("value"),
             password: $("#access_point_password").prop("value"),
-            duration: $("#access_point_duration").prop("value")
-        },
+            duration: parseInt($("#access_point_duration").prop("value"), 10)
+        }
+    };
+    return setConfiguration(cfg);
+}
+
+function setStation() {
+    var cfg = {
         station: {
             enabled: $("#station_enabled").prop("checked"),
             mac: $("#station_mac").prop("value").split("-").map((s) => parseInt(s, 16)),
             ip: $("#station_ip").prop("value").split(".").map((s) => parseInt(s, 10)),
             netmask: $("#station_netmask").prop("value").split(".").map((s) => parseInt(s, 10)),
             gateway: $("#station_gateway").prop("value").split(".").map((s) => parseInt(s, 10)),
-            port: $("#station_port").prop("value"),
+            port: parseInt($("#station_port").prop("value"), 10),
             user: $("#station_user").prop("value"),
             password: $("#station_password").prop("value")
-        },
+        }
+    };
+    return setConfiguration(cfg);
+}
+
+function setAutoSleepWakeUp() {
+    var cfg = {
         auto_sleep_wakeup: {
             enabled: $("#auto_sleep_wakeup_enabled").prop("checked"),
             sleep_time: $("#auto_sleep_wakeup_sleep_time").prop("value").split(":").map((s) => parseInt(s, 10)),
             wakeup_time: $("#auto_sleep_wakeup_wakeup_time").prop("value").split(":").map((s) => parseInt(s, 10))
-        },
-        sensors: []
+        }
     };
+    return setConfiguration(cfg);
+}
 
-    $("#sensors tbody tr").each((i,s) => {
-        cfg.sensors.push({
-            enabled: $(`#sensors_enabled_${i}`).prop("checked"),
-            name: $(`#sensors_name_${i}`).prop("value"),
-            type: parseInt($(`#sensors_type_${i}`).prop("value")),
-            min: parseFloat($(`#sensors_min_${i}`).prop("value")),
-            max: parseFloat($(`#sensors_max_${i}`).prop("value")),
-            calibration: {
-                factor: parseFloat($(`#sensors_calibration_factor_${i}`).prop("value")),
-                offset: parseFloat($(`#sensors_calibration_offset_${i}`).prop("value"))
-            },
-            alarm: {
-                enabled: $(`#sensors_alarm_enabled_${i}`).prop("checked"),
-                value: parseFloat($(`#sensors_alarm_value_${i}`).prop("value"))
-            }
-        });
-    });
-
-    $("#configuration :input").prop("disabled", true);
-    $("#message").fadeOut(250, () => $("#message").prop("class", "info").text("Sending").fadeIn(250));
+function setConfiguration(cfg) {
+    var deferred = new $.Deferred();
     $.ajax({
         type: "POST",
-        url: "http://192.168.1.200/configuration.json",
+        url: "/configuration.json",
         contentType: 'application/json',
         timeout: 5000,
-        data: JSON.stringify(cfg)
+        data: JSON.stringify(cfg),
+        beforeSend: () => {
+            $("input,select").prop("disabled", true);
+            infoMessage("Sending");
+        }
     })
-        .done(() => {
-            $("#configuration :input").prop("disabled", false);
-            $("#message").fadeOut(250, () => $("#message").prop("class", "success").text("Done").fadeIn(250, () => $("#message").delay(2000).fadeOut(250)));
+        .done((msg) => {
+            successMessage(msg ?? "Done");
+            deferred.resolve();
         })
         .fail((xhr, status, error) => {
-            $("#configuration :input").prop("disabled", false);
-            $("#message").fadeOut(250, () => $("#message").prop("class", "error").text(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`).fadeIn(250));
+            errorMessage(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`);
+            deferred.reject();
+        })
+        .always(() => {
+            $("input,select").prop("disabled", false);
         });
+    return deferred.promise();
 }
 
 function getConfiguration() {
     var deferred = new $.Deferred();
-    $("#configuration :input").prop("disabled", true);
-    infoMessage("Loading");
     $.ajax({
         type: "GET",
         url: "http://192.168.1.200/configuration.json",
         accepts: 'application/json',
-        timeout: 5000
+        timeout: 5000,
+        beforeSend: () => {
+            $("input,select").prop("disabled", true);
+            infoMessage("Loading");
+        }
     })
         .done((cfg) => {
             $("#access_point_enabled").prop("checked", cfg.access_point.enabled);
@@ -118,16 +181,16 @@ function getConfiguration() {
             var template = $($.parseHTML($("#sensor_template").html()));
             for (const [i, s] of cfg.sensors.entries()) {
                 var row = template.clone();
-                row.find("#sensors_number").text(i + 1);
-                row.find("#sensors_enabled").prop("checked", s.enabled);
-                row.find("#sensors_name").prop("value", s.name);
-                row.find("#sensors_type").prop("value", s.type);
-                row.find("#sensors_min").prop("value", s.min);
-                row.find("#sensors_max").prop("value", s.max);
-                row.find("#sensors_calibration_factor").prop("value", s.calibration.factor);
-                row.find("#sensors_calibration_offset").prop("value", s.calibration.offset);
-                row.find("#sensors_alarm_enabled").prop("checked", s.alarm.enabled);
-                row.find("#sensors_alarm_value").prop("value", s.alarm.value);
+                row.find("#sensor_number").text(i + 1);
+                row.find("#sensor_enabled").prop("checked", s.enabled);
+                row.find("#sensor_name").prop("value", s.name);
+                row.find("#sensor_type").prop("value", s.type);
+                row.find("#sensor_min").prop("value", s.min);
+                row.find("#sensor_max").prop("value", s.max);
+                row.find("#sensor_calibration_factor").prop("value", s.calibration.factor);
+                row.find("#sensor_calibration_offset").prop("value", s.calibration.offset);
+                row.find("#sensor_alarm_enabled").prop("checked", s.alarm.enabled);
+                row.find("#sensor_alarm_value").prop("value", s.alarm.value);
                 for (var c of row.find("*")) {
                     if (c.id) {
                         c.id += `_${i}`;
@@ -136,7 +199,7 @@ function getConfiguration() {
                         c.htmlFor += `_${i}`;
                     }
                 }
-                row.appendTo($("#sensors tbody"));
+                row.appendTo($("#sensors table tbody"));
             }
             successMessage("Done");
             deferred.resolve();
@@ -146,9 +209,49 @@ function getConfiguration() {
             deferred.reject();
         })
         .always(() => {
-            $("#configuration :input").prop("disabled", false);
+            $("input,select").prop("disabled", false);
         });
-        return deferred.promise();
+    return deferred.promise();
+}
+
+function getDateTime() {
+    var deferred = new $.Deferred();
+    $.ajax({
+        type: "GET",
+        url: "http://192.168.1.200/datetime.json",
+        accepts: 'application/json',
+        timeout: 5000,
+        beforeSend: () => {
+            $("input").prop("disabled", true);
+            infoMessage("Loading");
+        }
+    })
+        .done((dateTime) => {
+            var [date, time] = dateTime.split(" ");
+            $("#datetime_current_date").val(date);
+            $("#datetime_current_time").val(time);
+
+            var current = new Date(`${date}T${time}.000Z`);
+
+            clearInterval(this.updateHandle);
+            this.updateHandle = setInterval(() => {
+                current = new Date(current.getTime() + 1000);
+                var [date, time] = current.toISOString().split('T');
+                $("#datetime_current_date").val(date.slice(0, 10));
+                $("#datetime_current_time").val(time.slice(0, 8));
+            }, 1000);
+
+            successMessage("Done");
+            deferred.resolve(current);
+        })
+        .fail((xhr, status, error) => {
+            errorMessage(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`);
+            deferred.reject();
+        })
+        .always(() => {
+            $("input,select").prop("disabled", false);
+        });
+    return deferred.promise();
 }
 
 function clearMessage() {

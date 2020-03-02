@@ -48,29 +48,15 @@ static const Configuration defaultCfg
         {
             {
                 true,
-                "Test1",
-                Configuration::Sensor::Type::MPX5050,
-                10.0,
-                50.0,
+                "Ext",
+                Configuration::Sensor::Type::MPX5500,
+                0.0,
+                395.6,
                 {
-                    0.0,
-                    1.0
-                },
-                {
-                    true,
-                    25.0
-                }
-            },
-            {
-                true,
-                "Test2",
-                Configuration::Sensor::Type::MPX5050,
-                10.0,
-                50.0,
-                {
-                    1.0,
-                    0.0
-                },
+                    +0.00115189,
+                        -0.10866961,
+                        +31.0
+                    },
                 {
                     true,
                     25.0
@@ -78,13 +64,30 @@ static const Configuration defaultCfg
             },
             {
                 true,
-                "Test3",
-                Configuration::Sensor::Type::MPX5050,
-                10.0,
-                50.0,
+                "Sup",
+                Configuration::Sensor::Type::MPX5100,
+                49.18,
+                52.55,
                 {
-                    1.0,
-                    0.0
+                    +0.00115442,
+                        -0.10876640,
+                        +7.0
+                    },
+                {
+                    true,
+                    40.0
+                }
+            },
+            {
+                true,
+                "Inf",
+                Configuration::Sensor::Type::MPX5100,
+                17.9,
+                22.98,
+                {
+                    0.00110177,
+                    -0.25609925,
+                    +10.0
                 },
                 {
                     true,
@@ -109,40 +112,6 @@ auto Configuration::init() -> void
 
     log_d( "end" );
 }
-
-//void to_json(nlohmann::json& j, const Configuration::AccessPoint& accessPoint)
-//{
-//    j =
-//    {
-//        "enabled", this->accessPoint.enabled,
-//        "mac", accessPointMAC,
-//        "ip", this->accessPoint.ip,
-//        "netmask", this->accessPoint.ip,
-//        "gateway", this->accessPoint.gateway,
-//        "port", this->accessPoint.port,
-//        "user", this->accessPoint.user,
-//        "password", this->accessPoint.password,
-//        "duration", this->accessPoint.duration
-//    };
-//}
-//
-//
-//void to_json(nlohmann::json& j, const Configuration& cfg)
-//{
-//    j =
-//    {
-//        {
-//            "access_point", this->accessPoint
-//        }
-//    };
-//}
-//
-//void from_json(const nlohmann::json& j, Configuration& cfg)
-//{
-//    j.at("name").get_to(p.name);
-//    j.at("address").get_to(p.address);
-//    j.at("age").get_to(p.age);
-//}
 
 auto Configuration::serialize( ArduinoJson::JsonVariant& json ) const -> void
 {
@@ -223,8 +192,8 @@ auto Configuration::serialize( ArduinoJson::JsonVariant& json ) const -> void
             {
                 auto calibration{ sensor["calibration"] };
 
-                calibration["factor"] = s.calibration.factor;
-                calibration["offset"] = s.calibration.offset;
+                calibration["factor"] = s.calibration.angularCoefficient;
+                calibration["offset"] = s.calibration.linearCoefficient;
             }
             {
                 auto alarm{ sensor["alarm"] };
@@ -305,8 +274,14 @@ auto Configuration::deserialize( const ArduinoJson::JsonVariant& json ) -> void
             const auto duration{accessPoint["duration"]};
             if ( duration.is<uint16_t>() )
             {
+                log_d( "duration = %u -> %u", this->accessPoint.duration, duration.as<uint16_t>() );
                 this->accessPoint.duration = duration.as<uint16_t>();
             }
+            else
+            {
+                log_d( "duration error" );
+            }
+            log_d( "after = %u", this->accessPoint.duration );
         }
     }
     {
@@ -451,14 +426,14 @@ auto Configuration::deserialize( const ArduinoJson::JsonVariant& json ) -> void
                         const auto factor{ calibration["factor"] };
                         if( factor.is<double>() )
                         {
-                            this->sensors[i].calibration.factor = factor.as<double>();
+                            this->sensors[i].calibration.angularCoefficient = factor.as<double>();
                         }
                     }
                     {
                         const auto offset{ calibration["offset"] };
                         if( offset.is<double>() )
                         {
-                            this->sensors[i].calibration.offset = offset.as<double>();
+                            this->sensors[i].calibration.linearCoefficient = offset.as<double>();
                         }
                     }
                 }

@@ -14,6 +14,9 @@
 #include "WebInterface.hpp"
 #include "Display.hpp"
 #include "Infos.hpp"
+#include "Button.hpp"
+
+Button button{Peripherals::BTN};
 
 void setup()
 {
@@ -32,50 +35,24 @@ void setup()
     Display::init();
     Infos::init();
 
+    button.onPress( []
+    {
+        Display::ignore();
+    } );
+    button.onPress( 5000, nullptr, RealTime::sleep );
+
     log_d( "end" );
 }
-//--------------------------------------
-//#include <SPIFFS.h>
-//#include <HTTPClient.h>
-//#include "AudioFileSourcePROGMEM.h"
-//#include "AudioGeneratorWAV.h"
-//#include "AudioOutputI2S.h"
-//
-//std::unique_ptr<AudioGeneratorWAV> wav{};
-//std::unique_ptr<AudioFileSourcePROGMEM> file{};
-//std::unique_ptr<AudioOutputI2S> out{};
-//
-//extern const uint8_t cursor_move_wav_start[] asm( "_binary_audio_cursor_move_wav_start" );
-//extern const uint8_t cursor_move_wav_end[] asm( "_binary_audio_cursor_move_wav_end" );
-//
-//void audio()
-//{
-//    log_d( "begin" );
-//
-//    pinMode( Peripherals::PRF_CTL, OUTPUT );
-//    digitalWrite( Peripherals::PRF_CTL, LOW );
-//
-//    out.reset( new AudioOutputI2S{ 0, AudioOutputI2S::INTERNAL_DAC } );
-//}
-////--------------------------------------
-//void loop()
-//{
-//    if ( not wav or not wav->loop() )
-//    {
-//        wav.reset( new AudioGeneratorWAV{} );
-//        file.reset( new AudioFileSourcePROGMEM{ cursor_move_wav_start, cursor_move_wav_end - cursor_move_wav_start } );
-//        if( not wav->begin( file.get(), out.get() ) )
-//        {
-//            log_d( "fail" );
-//        }
-//    }
-//}
 
 void loop()
 {
+    if( RealTime::isRunning() )
+    {
+        Database::process();
+    }
     RealTime::process();
-    Database::process();
     WebInterface::process();
     Display::process();
     Infos::process();
+    button.process();
 }

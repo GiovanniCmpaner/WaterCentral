@@ -1,18 +1,15 @@
 $(document).ready(() => {
-
-    $("#filter_button").click((event) => {
-        $("#filter").prop("action", "filter");
-    });
-
-    $("#filter_download").click((event) => {
-        $("#filter").prop("action", "download");
-    });
-
     handleFilter();
     getDateTime().done(() => handleLoadMore());
 });
 
 function handleFilter() {
+    $("#filter_button").click((event) => {
+        $("#filter").prop("action", "filter");
+    });
+    $("#filter_download").click((event) => {
+        $("#filter").prop("action", "download");
+    });
     $("#filter").submit((event) => {
         event.preventDefault();
         if ($("#filter")[0].checkValidity()) {
@@ -29,10 +26,10 @@ function handleFilter() {
 function handleDownload() {
     var filter = buildfilter();
     if (filter) {
-        window.location = `http://192.168.1.200/data.csv`;
+        window.location = `/data.csv`;
     }
     else {
-        window.location = `http://192.168.1.200/data.csv?${URLSearchParams(filter).toString()}`;
+        window.location = `/data.csv?${URLSearchParams(filter).toString()}`;
     }
 }
 
@@ -59,33 +56,33 @@ function handleLoadMore(withoutFilter) {
 
 function getDateTime() {
     var deferred = new $.Deferred();
+    $.ajax({
+        type: "GET",
+        url: "/datetime.json",
+        accepts: 'application/json',
+        timeout: 5000,
+        beforeSend: () => {
+            $("#filter :input").prop("disabled", true);
+            infoMessage("Loading");
+        }
+    })
+        .done((dateTime) => {
+            var [date, time] = dateTime.split(" ");
+            $("#filter_start_date").val(date);
+            $("#filter_start_time").val("00:00:00");
+            $("#filter_end_date").val(date);
+            $("#filter_end_time").val("23:59:59");
 
-    $("#filter :input").prop("disabled", true);
-    infoMessage("Loading").then(() => {
-        $.ajax({
-            type: "GET",
-            url: "http://192.168.1.200/datetime.json",
-            accepts: 'application/json',
-            timeout: 5000
+            successMessage("Done");
+            deferred.resolve(new Date(dateTime));
         })
-            .done((data) => {
-                var dateTime = data.datetime.split(" ");
-                $("#filter_start_date").val(dateTime[0]);
-                $("#filter_start_time").val("00:00:00");
-                $("#filter_end_date").val(dateTime[0]);
-                $("#filter_end_time").val("23:59:59");
-
-                successMessage("Done");
-                deferred.resolve(new Date(data.datetime));
-            })
-            .fail((xhr, status, error) => {
-                errorMessage(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`);
-                deferred.reject();
-            })
-            .always(() => {
-                $("#filter :input").prop("disabled", false);
-            });
-    });
+        .fail((xhr, status, error) => {
+            errorMessage(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`);
+            deferred.reject();
+        })
+        .always(() => {
+            $("#filter :input").prop("disabled", false);
+        });
     return deferred.promise();
 }
 
@@ -128,14 +125,16 @@ function getData(filter) {
         }
     }
 
-    $("#filter :input").prop("disabled", true);
-    infoMessage("Loading");
     $.ajax({
         type: "GET",
-        url: "http://192.168.1.200/data.json",
+        url: "/data.json",
         accepts: 'application/json',
         timeout: 5000,
-        data: filter
+        data: filter,
+        beforeSend: () => {
+            $("#filter :input").prop("disabled", true);
+            infoMessage("Loading");
+        }
     })
         .done((data) => {
             if (clear) {
