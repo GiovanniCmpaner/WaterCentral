@@ -7,8 +7,8 @@
 #include <thread>
 #include <Wire.h>
 #include <BME280I2C.h>
-#include <esp_pthread.h>
 #include <map>
+#include <algorithm>
 
 #include "Configuration.hpp"
 #include "Display.hpp"
@@ -45,14 +45,15 @@ namespace Infos
         {
             if( cfg.sensors[n].enabled )
             {
+                static constexpr std::array<double, 4> sensorsMax{50.0, 100.0, 500.0, 700.0};
                 static constexpr std::array<double, 4> sensorsSensivity{0.0900, 0.0450, 0.0090, 0.0064};
                 static constexpr std::array<double, 4> sensorsZeroOffset{-0.2000, -0.2000, -0.2000, -0.2000};
 
                 infos[n].analogRead.update();
                 const auto rawRead{infos[n].analogRead.getValue()};
                 const auto calibratedRead{ rawRead* cfg.sensors[n].calibration.angularCoefficient + cfg.sensors[n].calibration.linearCoefficient };
-                const auto sensorValue{ ( ( calibratedRead + sensorsZeroOffset[cfg.sensors[n].type] ) / sensorsSensivity[cfg.sensors[n].type] ) + cfg.sensors[n].calibration.zeroOffset };
-                infos[n].value = sensorValue;
+                const auto sensorValue{ ( calibratedRead + sensorsZeroOffset[cfg.sensors[n].type] ) / sensorsSensivity[cfg.sensors[n].type] };
+                infos[n].value = constrain( sensorValue, 0.0, sensorsMax[cfg.sensors[n].type] );
             }
         }
     }

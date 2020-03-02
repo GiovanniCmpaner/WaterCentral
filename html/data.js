@@ -58,7 +58,7 @@ function getDateTime() {
     var deferred = new $.Deferred();
     $.ajax({
         type: "GET",
-        url: "/datetime.json",
+        url: "http://192.168.1.200/datetime.json",
         accepts: 'application/json',
         timeout: 5000,
         beforeSend: () => {
@@ -127,7 +127,7 @@ function getData(filter) {
 
     $.ajax({
         type: "GET",
-        url: "/data.json",
+        url: "http://192.168.1.200/data.json",
         accepts: 'application/json',
         timeout: 5000,
         data: filter,

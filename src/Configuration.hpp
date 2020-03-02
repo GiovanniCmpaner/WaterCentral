@@ -53,7 +53,6 @@ struct Configuration
         {
             double angularCoefficient;
             double linearCoefficient;
-            double zeroOffset;
         };
 
         struct Alarm

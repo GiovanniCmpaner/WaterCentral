@@ -31,13 +31,12 @@
             <th rowspan="2"> Type </th>
             <th rowspan="2"> Min (kPa) </th>
             <th rowspan="2"> Max (kPa) </th>
-            <th rowspan="1" colspan="3"> Calibration </th>
+            <th rowspan="1" colspan="2"> Calibration </th>
             <th rowspan="1" colspan="2"> Alarm </th>
           </tr>
           <tr>
             <th> Angular Coefficient </th>
             <th> Linear Coefficient </th>
-            <th> Zero Offset (kPa) </th>
             <th> Enabled </th>
             <th> Value (%) </th>
           </tr>
@@ -47,18 +46,26 @@
             <tr>
               <th>
                 <label for="sensor_number">N</label>
+              </th>
+              <th>
                 <span id="sensor_number"></span>
               </th>
               <td>
                 <label for="sensor_enabled">Enabled</label>
+              </td>
+              <td>
                 <input type="checkbox" id="sensor_enabled">
               </td>
               <td>
                 <label for="sensor_name">Name</label>
+              </td>
+              <td>
                 <input type="text" id="sensor_name" required>
               </td>
               <td>
                 <label for="sensor_type">Type</label>
+              </td>
+              <td>
                 <select id="sensor_type" required>
                   <option disabled selected value hidden></option>
                   <option value="0">MPX5050</option>
@@ -69,30 +76,38 @@
               </td>
               <td>
                 <label for="sensor_min"> Min (kPa) </label>
+              </td>
+              <td>
                 <input type="number" id="sensor_min" step="any" required>
               </td>
               <td>
                 <label for="sensor_max"> Max (kPa) </label>
+              </td>
+              <td>
                 <input type="number" id="sensor_max" step="any" required>
               </td>
               <td>
                 <label for="sensor_calibration_angular_coefficient"> Calibration Angular Coefficient </label>
+              </td>
+              <td>
                 <input type="number" id="sensor_calibration_angular_coefficient" min="0" max="+999" step="any" required>
               </td>
               <td>
                 <label for="sensor_calibration_linear_coefficient"> Calibration Linear Coefficient </label>
+              </td>
+              <td>
                 <input type="number" id="sensor_calibration_linear_coefficient" min="-999" max="+999" step="any" required>
               </td>
               <td>
-                <label for="sensor_calibration_zero_offset"> Zero Offset (kPa) </label>
-                <input type="number" id="sensor_calibration_zero_offset" min="-999" max="+999" step="any" required>
+                <label for="sensor_alarm_enabled"> Alarm Enabled </label>
               </td>
               <td>
-                <label for="sensor_alarm_enabled"> Alarm Enabled </label>
                 <input type="checkbox" id="sensor_alarm_enabled">
               </td>
               <td>
                 <label for="sensor_alarm_value"> Alarm Value (%) </label>
+              </td>
+              <td>
                 <input type="number" id="sensor_alarm_value" min="0" max="100" step="any" required>
               </td>
             </tr>
@@ -109,6 +124,8 @@
         <tr>
           <td>
             <label for="datetime_current_date"> Current </label>
+          </td>
+          <td>
             <input type="date" id="datetime_current_date" readonly>
             <input type="time" id="datetime_current_time" step="1" readonly>
           </td>
@@ -116,6 +133,8 @@
         <tr>
           <td>
             <label for="datetime_new_date"> New </label>
+          </td>
+          <td>
             <input type="date" id="datetime_new_date">
             <input type="time" id="datetime_new_time" step="1">
           </td>
@@ -131,54 +150,72 @@
         <tr>
           <td>
             <label for="access_point_enabled"> Enabled </label>
+          </td>
+          <td>
             <input type="checkbox" id="access_point_enabled">
           </td>
         </tr>
         <tr>
           <td>
             <label for="access_point_mac">MAC</label>
+          </td>
+          <td>
             <input type="text" id="access_point_mac" readonly>
           </td>
         </tr>
         <tr>
           <td>
             <label for="access_point_ip">IP</label>
+          </td>
+          <td>
             <input type="text" id="access_point_ip" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="access_point_netmask">Netmask</label>
+          </td>
+          <td>
             <input type="text" id="access_point_netmask" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="access_point_gateway">Gateway</label>
+          </td>
+          <td>
             <input type="text" id="access_point_gateway" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="access_point_port">Port</label>
+          </td>
+          <td>
             <input type="number" id="access_point_port" min="1" max="65534" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="access_point_user">User</label>
+          </td>
+          <td>
             <input type="text" id="access_point_user" minlength="4" maxlength="32" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="access_point_password">Password</label>
+          </td>
+          <td>
             <input type="text" id="access_point_password" minlength="8" maxlength="64" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="access_point_duration">Duration</label>
+          </td>
+          <td>
             <input type="number" id="access_point_duration" min="10" max="99999" required>
           </td>
         </tr>
@@ -193,48 +230,64 @@
         <tr>
           <td>
             <label for="station_enabled">Enabled</label>
+          </td>
+          <td>
             <input type="checkbox" id="station_enabled">
           </td>
         </tr>
         <tr>
           <td>
             <label for="station_mac">MAC</label>
+          </td>
+          <td>
             <input type="text" id="station_mac" readonly>
           </td>
         </tr>
         <tr>
           <td>
             <label for="station_ip">IP</label>
+          </td>
+          <td>
             <input type="text" id="station_ip" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="station_netmask">Netmask</label>
+          </td>
+          <td>
             <input type="text" id="station_netmask" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="station_gateway">Gateway</label>
+          </td>
+          <td>
             <input type="text" id="station_gateway" pattern="^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="station_port">Port</label>
+          </td>
+          <td>
             <input type="number" id="station_port" min="1" max="65534" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="station_user">User</label>
+          </td>
+          <td>
             <input type="text" id="station_user" minlength="4" maxlength="32" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="station_password">Password</label>
+          </td>
+          <td>
             <input type="text" id="station_password" minlength="8" maxlength="64" required>
           </td>
         </tr>
@@ -249,18 +302,24 @@
         <tr>
           <td>
             <label for="auto_sleep_wakeup_enabled">Enabled</label>
+          </td>
+          <td>
             <input type="checkbox" id="auto_sleep_wakeup_enabled">
           </td>
         </tr>
         <tr>
           <td>
             <label for="auto_sleep_wakeup_sleep_time">Sleep</label>
+          </td>
+          <td>
             <input type="time" id="auto_sleep_wakeup_sleep_time" required>
           </td>
         </tr>
         <tr>
           <td>
             <label for="auto_sleep_wakeup_wakeup_time">WakeUp</label>
+          </td>
+          <td>
             <input type="time" id="auto_sleep_wakeup_wakeup_time" required>
           </td>
         </tr>

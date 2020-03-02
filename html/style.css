@@ -4,27 +4,6 @@ html {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-table {
-  min-width: 22em;
-}
-
-td {
-  padding: 0.2em;
-}
-
-span {
-  text-align: center;
-}
-
-table label {
-  display: table-cell;
-}
-
-table input, table select, table span {
-  display: inline-block;
-  width: 9em;
-}
-
 #message {
   position: sticky;
   top: 0;
@@ -66,8 +45,29 @@ table input, table select, table span {
 
 /***************************************************/
 
-.responsive label {
-  display: none;
+table {
+  min-width: 16em;
+}
+
+table th, table td {
+  padding: 0.2em;
+}
+
+table tbody th:nth-child(odd), table tbody td:nth-child(odd) {
+  width: 5em;
+}
+
+table tbody th:nth-child(even), table tbody td:nth-child(even) {
+  width: 9em;
+}
+
+@media (min-width: 30em) {
+  .responsive input, .responsive select {
+    width: 100%;
+  }
+  .responsive tbody th:nth-child(odd), .responsive tbody td:nth-child(odd) {
+    display: none;
+  }
 }
 
 @media (max-width: 30em) {
@@ -77,7 +77,10 @@ table input, table select, table span {
   .responsive tbody th {
     text-align: left;
   }
-  .responsive label, .responsive tr, .responsive td {
+  .responsive tr {
+    max-width: 16em;
+  }
+  .responsive tr, .responsive td, .responsive th {
     display: inline-block;
   }
   .responsive tr:not(:first-child) {
@@ -102,17 +105,3 @@ table input, table select, table span {
 }
 
 /***************************************************/
-
-.grid {
-  display: inline-grid;
-  grid-template-columns: repeat(2, auto);
-  grid-gap: 0.25em;
-}
-
-.grid input, .grid select, .grid label, .grid span {
-  padding: 0.2em;
-}
-
-#values.grid {
-  grid-template-columns: repeat(3, auto);
-}

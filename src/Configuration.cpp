@@ -54,8 +54,7 @@ static const Configuration defaultCfg
                 395.6,
                 {
                     +0.00115189,
-                        -0.10866961,
-                        +31.0
+                        -0.10866961
                     },
                 {
                     true,
@@ -70,8 +69,7 @@ static const Configuration defaultCfg
                 52.55,
                 {
                     +0.00115442,
-                        -0.10876640,
-                        +7.0
+                        -0.10876640
                     },
                 {
                     true,
@@ -86,8 +84,7 @@ static const Configuration defaultCfg
                 22.98,
                 {
                     0.00110177,
-                    -0.25609925,
-                    +10.0
+                    -0.25609925
                 },
                 {
                     true,
