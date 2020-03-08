@@ -46,6 +46,7 @@ html {
 /***************************************************/
 
 table {
+  table-layout: fixed;
   min-width: 16em;
 }
 
@@ -61,12 +62,21 @@ table tbody th:nth-child(even), table tbody td:nth-child(even) {
   width: 9em;
 }
 
+/***************************************************/
+
+.responsive tr, .responsive td, .responsive th {
+  text-align: center;
+}
+
 @media (min-width: 30em) {
   .responsive input, .responsive select {
     width: 100%;
   }
   .responsive tbody th:nth-child(odd), .responsive tbody td:nth-child(odd) {
     display: none;
+  }
+  .responsive tbody th:nth-child(even), .responsive tbody td:nth-child(even) {
+    width: auto;
   }
 }
 
@@ -95,13 +105,11 @@ table tbody th:nth-child(even), table tbody td:nth-child(even) {
 /***************************************************/
 
 #infos canvas {
-  width: 100%;
-  min-width: 6em;
-  min-width: 22em;
+  min-width: 10em;
+  max-width: 22em;
   height: 1.2em;
   border: 1px solid black;
   padding: 0.15em;
-  display: inline-block;
 }
 
 /***************************************************/

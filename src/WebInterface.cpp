@@ -1,4 +1,5 @@
 #include <Arduino.h>
+
 #include <ArduinoJson.hpp>
 #include <AsyncJson.h>
 #include <ESPAsyncWebServer.h>
@@ -9,6 +10,9 @@
 #include <esp_log.h>
 #include <functional>
 #include <memory>
+#include <Update.h>
+#include <esp_task_wdt.h>
+#include <soc/rtc_wdt.h>
 
 #include "Configuration.hpp"
 #include "Database.hpp"
@@ -39,6 +43,7 @@ extern const uint8_t style_css_end[] asm( "_binary_html_style_css_end" );
 namespace WebInterface
 {
     static std::unique_ptr<AsyncWebServer> server{};
+    static std::chrono::system_clock::time_point modeTimer{};
 
     static auto buildFilter( AsyncWebServerRequest* request ) -> Database::Filter
     {
@@ -262,11 +267,49 @@ namespace WebInterface
             request->send( response );
 
             delay( 3000 );
-            esp_restart();
+            ESP.restart();
+        }
 
+        static auto handleUpdate( AsyncWebServerRequest* request, String filename, size_t index, uint8_t* data, size_t len, bool final ) -> void
+        {
+            if( request->url() != "/update" )
+            {
+                request->send( 404 );
+                return;
+            }
+            if( filename != "firmware.bin" )
+            {
+                request->send( 400, "text/plain", "Invalid filename" );
+                return;
+            }
+            if( index == 0 )
+            {
+                Serial.printf( "UploadStart: %s\n", filename.c_str() );
+                if( not Update.begin( request->contentLength() ) )
+                {
+                    request->send( 500, "text/plain", Update.errorString() );
+                    return;
+                }
+
+            }
+            if ( Update.write( data, len ) != len )
+            {
+                request->send( 500, "text/plain", Update.errorString() );
+                return;
+            }
+            if( final )
+            {
+                if( not Update.end( true ) )
+                {
+                    request->send( 500, "text/plain", Update.errorString() );
+                    return;
+                }
+                request->send( 200, "text/plain", "Success, rebooting in 3 seconds" );
+                delay( 3000 );
+                ESP.restart();
+            }
         }
     } // namespace Post
-
 
     static auto configureServer() -> void
     {
@@ -299,6 +342,7 @@ namespace WebInterface
 
             server->addHandler( new AsyncCallbackJsonWebHandler( "/configuration.json", Post::handleConfigurationJson, 2048 ) );
             server->addHandler( new AsyncCallbackJsonWebHandler( "/datetime.json", Post::handleDateTimeJson, 1024 ) );
+            server->onFileUpload( Post::handleUpdate );
 
             DefaultHeaders::Instance().addHeader( "Access-Control-Allow-Origin", "*" );
             DefaultHeaders::Instance().addHeader( "Access-Control-Allow-Methods", "POST, GET, OPTIONS" );
@@ -319,7 +363,7 @@ namespace WebInterface
         }
     }
 
-    static auto configureStation() -> void
+    static auto configureStation() -> bool
     {
         log_d( "begin" );
 
@@ -335,38 +379,38 @@ namespace WebInterface
         if ( not cfg.station.enabled )
         {
             WiFi.mode( WIFI_MODE_NULL );
+            return false;
         }
-        else
+
+        if ( not WiFi.mode( WIFI_MODE_STA ) )
         {
-            if ( not WiFi.mode( WIFI_MODE_STA ) )
-            {
-                log_e( "mode error" );
-                std::abort();
-            }
+            log_d( "mode error" );
+            return false;
+        }
 
-            WiFi.persistent( false );
-            WiFi.setAutoConnect( false );
-            WiFi.setAutoReconnect( true );
+        WiFi.persistent( false );
+        WiFi.setAutoConnect( false );
+        WiFi.setAutoReconnect( true );
 
-            if ( not WiFi.config( cfg.station.ip.data(), cfg.station.gateway.data(), cfg.station.netmask.data() ) )
-            {
-                log_e( "config error" );
-                std::abort();
-            }
+        if ( not WiFi.config( cfg.station.ip.data(), cfg.station.gateway.data(), cfg.station.netmask.data() ) )
+        {
+            log_d( "config error" );
+            return false;
+        }
 
-            if ( not WiFi.begin( cfg.station.user.data(), cfg.station.password.data() ) )
-            {
-                log_e( "init error" );
-                std::abort();
-            }
+        WiFi.setHostname( "WaterCentral" );
+
+        if ( not WiFi.begin( cfg.station.user.data(), cfg.station.password.data() ) )
+        {
+            log_d( "init error" );
+            return false;
         }
 
         configureServer();
-
-        log_d( "end" );
+        return true;
     }
 
-    static auto configureAccessPoint() -> void
+    static auto configureAccessPoint() -> bool
     {
         log_d( "begin" );
 
@@ -383,47 +427,65 @@ namespace WebInterface
         if ( not cfg.accessPoint.enabled )
         {
             WiFi.mode( WIFI_MODE_NULL );
+            return false;
         }
-        else
+
+        if ( not WiFi.mode( WIFI_MODE_AP ) )
         {
-            if ( not WiFi.mode( WIFI_MODE_AP ) )
-            {
-                log_e( "mode error" );
-                std::abort();
-            }
+            log_d( "mode error" );
+            return false;
+        }
 
-            WiFi.persistent( false );
+        WiFi.persistent( false );
 
-            if ( not WiFi.softAPConfig( cfg.accessPoint.ip.data(), cfg.accessPoint.gateway.data(), cfg.accessPoint.netmask.data() ) )
-            {
-                log_e( "config error" );
-                std::abort();
-            }
+        if ( not WiFi.softAPConfig( cfg.accessPoint.ip.data(), cfg.accessPoint.gateway.data(), cfg.accessPoint.netmask.data() ) )
+        {
+            log_d( "config error" );
+            return false;
+        }
 
-            if ( not WiFi.softAP( cfg.accessPoint.user.data(), cfg.accessPoint.password.data() ) )
-            {
-                log_e( "init error" );
-                std::abort();
-            }
+        WiFi.setHostname( "WaterCentral" );
+
+        if ( not WiFi.softAP( cfg.accessPoint.user.data(), cfg.accessPoint.password.data() ) )
+        {
+            log_d( "init error" );
+            return false;
         }
 
         configureServer();
-
-        log_d( "end" );
+        return true;
     }
 
     auto init() -> void
     {
         log_d( "begin" );
 
-        //configureAccessPoint();
-        configureStation();
+        if( not configureAccessPoint() )
+        {
+            configureStation();
+        }
+
+        modeTimer = std::chrono::system_clock::now();
 
         log_d( "end" );
     }
 
     auto process() -> void
     {
-
+        if( cfg.accessPoint.enabled and WiFi.getMode() == WIFI_MODE_AP )
+        {
+            const auto now{std::chrono::system_clock::now()};
+            if( WiFi.softAPgetStationNum() > 0 )
+            {
+                modeTimer = now;
+            }
+            else
+            {
+                if( now - modeTimer > std::chrono::seconds( cfg.accessPoint.duration ) )
+                {
+                    configureStation();
+                }
+            }
+        }
     }
 } // namespace WebInterface

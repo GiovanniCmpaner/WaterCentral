@@ -13,6 +13,7 @@
 #include "Peripherals.hpp"
 #include "Utils.hpp"
 #include "Infos.hpp"
+#include "RealTime.hpp"
 
 namespace Database
 {
@@ -118,27 +119,23 @@ namespace Database
         if ( rc != SQLITE_OK )
         {
             log_d( "insert prepare error: %s", sqlite3_errmsg( db ) );
-            //std::abort();
-        }
-        else
-        {
-            sqlite3_bind_int64( res, 1, sensorData.dateTime );
-            sqlite3_bind_double( res, 2, sensorData.temperature );
-            sqlite3_bind_double( res, 3, sensorData.humidity );
-            sqlite3_bind_double( res, 4, sensorData.pressure );
-            sqlite3_bind_double( res, 5, sensorData.sensors[0] );
-            sqlite3_bind_double( res, 6, sensorData.sensors[1] );
-            sqlite3_bind_double( res, 7, sensorData.sensors[2] );
-            if ( sqlite3_step( res ) != SQLITE_DONE )
-            {
-                log_d( "insert error: %s", sqlite3_errmsg( db ) );
-                //std::abort();
-            }
-            sqlite3_finalize( res );
-            return sqlite3_last_insert_rowid( db );
+            return 0;
         }
 
-        return 0;
+        sqlite3_bind_int64( res, 1, sensorData.dateTime );
+        sqlite3_bind_double( res, 2, sensorData.temperature );
+        sqlite3_bind_double( res, 3, sensorData.humidity );
+        sqlite3_bind_double( res, 4, sensorData.pressure );
+        sqlite3_bind_double( res, 5, sensorData.sensors[0] );
+        sqlite3_bind_double( res, 6, sensorData.sensors[1] );
+        sqlite3_bind_double( res, 7, sensorData.sensors[2] );
+        if ( sqlite3_step( res ) != SQLITE_DONE )
+        {
+            log_d( "insert error: %s", sqlite3_errmsg( db ) );
+            //std::abort();
+        }
+        sqlite3_finalize( res );
+        return sqlite3_last_insert_rowid( db );
     }
 
     static auto generate() -> void
@@ -179,7 +176,9 @@ namespace Database
             "WHERE                                        "
             "        ( ID >= IFNULL(?,ID) )               "
             "    AND ( DATE_TIME >= IFNULL(?,DATE_TIME) ) "
-            "    AND ( DATE_TIME <= IFNULL(?,DATE_TIME) ) "};
+            "    AND ( DATE_TIME <= IFNULL(?,DATE_TIME) ) "
+            "ORDER BY                                     "
+            "    DATE_TIME ASC                            "};
 
         const auto rc{sqlite3_prepare_v2( db, query, strlen( query ), &this->res, nullptr )};
         if ( rc != SQLITE_OK )

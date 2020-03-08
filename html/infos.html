@@ -21,35 +21,46 @@
   <h2> Infos </h2>
   <fieldset>
     <legend> Environment </legend>
-    <div class="grid" id="environment">
-      <label for="temperature"> Temperature (°C) </label>
-      <span id="temperature"></span>
-
-      <label for="humidity"> Humidity (%) </label>
-      <span id="humidity"></span>
-
-      <label for="pressure"> Pressure (hPa) </label>
-      <span id="pressure"></span>
-    </div>
+    <table id="environment">
+      <tbody>
+        <tr>
+          <td> <label for="temperature"> Temperature (°C) </label> </td>
+          <td> <span id="temperature"></span> </td>
+        </tr>
+        <tr>
+          <td> <label for="humidity"> Humidity (%) </label> </td>
+          <td> <span id="humidity"></span> </td>
+        </tr>
+        <tr>
+          <td> <label for="pressure"> Pressure (hPa) </label> </td>
+          <td> <span id="pressure"></span> </td>
+        </tr>
+      </tbody>
+    </table>
   </fieldset>
   <fieldset>
-    <legend> Sensors </legend>
-    <div id="values" class="grid responsive">
-      <span> Name </span>
-      <span> Value (kPa) </span>
-      <span> Graph </span>
-
-      <template id="sensor_template">
-        <label for="sensor_name"> Name </label>
-        <span id="sensor_name"></span>
-
-        <label for="sensor_value"> Value (kPa) </label>
-        <span id="sensor_value"></span>
-
-        <label for="sensor_graph"> Graph </label>
-        <canvas id="sensor_graph"></canvas>
-      </template>
-    </div>
+    <legend> Values </legend>
+    <table id="values" class="responsive">
+      <thead>
+        <tr>
+          <th> Name </th>
+          <th> Value (kPa) </th>
+          <th> Graph </th>
+        </tr>
+      </thead>
+      <tbody>
+        <template id="sensor_template">
+          <tr>
+            <th> <label for="sensor_name"> Name </label> </th>
+            <td> <span id="sensor_name"></span> </td>
+            <td> <label for="sensor_value"> Value (kPa) </label> </td>
+            <td> <span id="sensor_value"></span> </td>
+            <td> <label for="sensor_graph"> Graph </label> </td>
+            <td> <canvas id="sensor_graph"></canvas> </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
   </fieldset>
 </body>
 

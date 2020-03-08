@@ -41,6 +41,36 @@ function handleConfiguration() {
     });
 }
 
+function setDateTime() {
+    var deferred = new $.Deferred();
+
+    var newDateTime = `${$("#datetime_new_date").val()} ${$("#datetime_new_time").val()}`;
+
+    $.ajax({
+        type: "POST",
+        url: "/datetime.json",
+        contentType: 'application/json',
+        timeout: 5000,
+        data: newDateTime,
+        beforeSend: () => {
+            $("input,select").prop("disabled", true);
+            infoMessage("Sending");
+        }
+    })
+        .done((dateTime) => {
+            successMessage(msg ?? "Done");
+            deferred.resolve();
+        })
+        .fail((xhr, status, error) => {
+            errorMessage(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`);
+            deferred.reject();
+        })
+        .always(() => {
+            $("input,select").prop("disabled", false);
+        });
+    return deferred.promise();
+}
+
 function setSensors() {
     var cfg = {
         sensors: []
@@ -54,8 +84,8 @@ function setSensors() {
             min: parseFloat($(`#sensor_min_${i}`).prop("value")),
             max: parseFloat($(`#sensor_max_${i}`).prop("value")),
             calibration: {
-                factor: parseFloat($(`#sensor_calibration_factor_${i}`).prop("value")),
-                offset: parseFloat($(`#sensor_calibration_offset_${i}`).prop("value"))
+                factor: parseFloat($(`#sensor_calibration_angular_coefficient_${i}`).prop("value")),
+                offset: parseFloat($(`#sensor_calibration_linear_coefficient_${i}`).prop("value"))
             },
             alarm: {
                 enabled: $(`#sensor_alarm_enabled_${i}`).prop("checked"),
@@ -65,10 +95,6 @@ function setSensors() {
     });
 
     return setConfiguration(cfg);
-}
-
-function setDateTime() {
-
 }
 
 function setAccessPoint() {
@@ -117,6 +143,7 @@ function setAutoSleepWakeUp() {
 
 function setConfiguration(cfg) {
     var deferred = new $.Deferred();
+
     $.ajax({
         type: "POST",
         url: "/configuration.json",
@@ -146,7 +173,7 @@ function getConfiguration() {
     var deferred = new $.Deferred();
     $.ajax({
         type: "GET",
-        url: "http://192.168.1.200/configuration.json",
+        url: "/configuration.json",
         accepts: 'application/json',
         timeout: 5000,
         beforeSend: () => {
@@ -187,8 +214,8 @@ function getConfiguration() {
                 row.find("#sensor_type").prop("value", s.type);
                 row.find("#sensor_min").prop("value", s.min);
                 row.find("#sensor_max").prop("value", s.max);
-                row.find("#sensor_calibration_factor").prop("value", s.calibration.factor);
-                row.find("#sensor_calibration_offset").prop("value", s.calibration.offset);
+                row.find("#sensor_calibration_angular_coefficient").prop("value", s.calibration.angular_coefficient);
+                row.find("#sensor_calibration_linear_coefficient").prop("value", s.calibration.linear_coefficient);
                 row.find("#sensor_alarm_enabled").prop("checked", s.alarm.enabled);
                 row.find("#sensor_alarm_value").prop("value", s.alarm.value);
                 for (var c of row.find("*")) {
@@ -218,7 +245,7 @@ function getDateTime() {
     var deferred = new $.Deferred();
     $.ajax({
         type: "GET",
-        url: "http://192.168.1.200/datetime.json",
+        url: "/datetime.json",
         accepts: 'application/json',
         timeout: 5000,
         beforeSend: () => {

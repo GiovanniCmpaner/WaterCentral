@@ -77,11 +77,12 @@ namespace Display
 
                 if ( states[n].blinkHidden )
                 {
-                    lcd.print( std::string( cfg.sensors[n].name.size(), ' ' ).data() );
+                    lcd.print( std::string( nameMaxLength + 1, ' ' ).data() );
                 }
                 else
                 {
                     lcd.print( cfg.sensors[n].name.data() );
+                    lcd.print( std::string( nameMaxLength - cfg.sensors[n].name.size() + 1, ' ' ).data() );
                 }
 
                 const auto percentage{ map( Infos::getSensor( n ), cfg.sensors[n].min, cfg.sensors[n].max, 0.0, 100.0 ) };
@@ -89,11 +90,16 @@ namespace Display
                 nRow++;
             }
         }
+        while( nRow < 4 )
+        {
+            lcd.setCursor( 0, nRow );
+            lcd.print( std::string( 20, ' ' ).data() );
+            nRow++;
+        }
     }
 
     static auto check() -> void
     {
-        uint8_t nRow = 0;
         for ( uint8_t n = 0; n < states.size(); n++ )
         {
             if ( cfg.sensors[n].enabled and cfg.sensors[n].alarm.enabled )
@@ -120,7 +126,6 @@ namespace Display
                     states[n].warningLed = false;
                     states[n].warningBuzzer = false;
                 }
-                nRow++;
             }
         }
     }
@@ -181,6 +186,10 @@ namespace Display
         lcd.home();
 
         bar.init();
+
+        lcd.setCursor( 0, 0 );
+        lcd.print( "Inicializando2..." );
+        delay( 1000 );
     }
 
     auto process() -> void

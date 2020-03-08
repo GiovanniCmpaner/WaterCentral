@@ -26,15 +26,11 @@
 namespace RealTime
 {
     static RtcDS3231<TwoWire> rtc{Wire};
-    static bool running{false};
 
     static auto syncDateTime() -> void
     {
-        if( running )
-        {
-            const auto time{timeval{static_cast<std::time_t>( rtc.GetDateTime().Epoch32Time() )}};
-            settimeofday( &time, nullptr );
-        }
+        const auto time{timeval{static_cast<std::time_t>( rtc.GetDateTime().Epoch32Time() )}};
+        settimeofday( &time, nullptr );
     }
 
     static auto startHardware() -> void
@@ -46,62 +42,49 @@ namespace RealTime
             log_d( "rtc error: %d", rtc.LastError() );
         }
 
-        const auto now{rtc.GetDateTime()};
-        const auto compiled{RtcDateTime{__DATE__, __TIME__}};
-        if( now < compiled )
-        {
-            log_d( "rtc lost datetime" );
-            rtc.SetIsRunning( false );
-        }
-        else
-        {
-            rtc.SetIsRunning( true );
-        }
+        rtc.SetIsRunning( true );
     }
 
     static auto configureAlarms() -> void
     {
-        if( running )
+        log_d( "enabled = %u", cfg.autoSleepWakeUp.enabled );
+        log_d( "sleepTime = %02u:%02u", cfg.autoSleepWakeUp.sleepTime[0], cfg.autoSleepWakeUp.sleepTime[1] );
+        log_d( "wakeUpTime = %02u:%02u", cfg.autoSleepWakeUp.wakeUpTime[0], cfg.autoSleepWakeUp.wakeUpTime[1] );
+
+        if ( cfg.autoSleepWakeUp.enabled )
         {
-            log_d( "enabled = %u", cfg.autoSleepWakeUp.enabled );
-            log_d( "sleepTime = %02u:%02u", cfg.autoSleepWakeUp.sleepTime[0], cfg.autoSleepWakeUp.sleepTime[1] );
-            log_d( "wakeUpTime = %02u:%02u", cfg.autoSleepWakeUp.wakeUpTime[0], cfg.autoSleepWakeUp.wakeUpTime[1] );
-
-            if ( cfg.autoSleepWakeUp.enabled )
+            rtc.Enable32kHzPin( false );
+            rtc.SetSquareWavePin( DS3231SquareWavePin_ModeAlarmBoth );
             {
-                rtc.Enable32kHzPin( false );
-                rtc.SetSquareWavePin( DS3231SquareWavePin_ModeAlarmBoth );
-                {
-                    const auto wakeUpAlarm{DS3231AlarmOne{0,
-                                                          cfg.autoSleepWakeUp.wakeUpTime[0],
-                                                          cfg.autoSleepWakeUp.wakeUpTime[1],
-                                                          0,
-                                                          DS3231AlarmOneControl_HoursMinutesSecondsMatch}};
-                    rtc.SetAlarmOne( wakeUpAlarm );
-                }
-                {
-                    const auto sleepAlarm{DS3231AlarmTwo{0,
-                                                         cfg.autoSleepWakeUp.sleepTime[0],
-                                                         cfg.autoSleepWakeUp.sleepTime[1],
-                                                         DS3231AlarmTwoControl_HoursMinutesMatch}};
-                    rtc.SetAlarmTwo( sleepAlarm );
-                }
-                rtc.LatchAlarmsTriggeredFlags();
+                const auto wakeUpAlarm{DS3231AlarmOne{0,
+                                                      cfg.autoSleepWakeUp.wakeUpTime[0],
+                                                      cfg.autoSleepWakeUp.wakeUpTime[1],
+                                                      0,
+                                                      DS3231AlarmOneControl_HoursMinutesSecondsMatch}};
+                rtc.SetAlarmOne( wakeUpAlarm );
             }
-            else
             {
-                rtc.Enable32kHzPin( false );
-                rtc.SetSquareWavePin( DS3231SquareWavePin_ModeNone );
+                const auto sleepAlarm{DS3231AlarmTwo{0,
+                                                     cfg.autoSleepWakeUp.sleepTime[0],
+                                                     cfg.autoSleepWakeUp.sleepTime[1],
+                                                     DS3231AlarmTwoControl_HoursMinutesMatch}};
+                rtc.SetAlarmTwo( sleepAlarm );
             }
-
-            esp_sleep_enable_ext0_wakeup( static_cast<gpio_num_t>( Peripherals::DS3231::SQW_INT ), 0 );
+            rtc.LatchAlarmsTriggeredFlags();
         }
+        else
+        {
+            rtc.Enable32kHzPin( false );
+            rtc.SetSquareWavePin( DS3231SquareWavePin_ModeNone );
+        }
+
+        esp_sleep_enable_ext0_wakeup( static_cast<gpio_num_t>( Peripherals::DS3231::SQW_INT ), 0 );
         esp_sleep_enable_ext0_wakeup( static_cast<gpio_num_t>( Peripherals::BTN ), 0 );
     }
 
     static auto checkSleep() -> void
     {
-        if ( running and cfg.autoSleepWakeUp.enabled )
+        if ( cfg.autoSleepWakeUp.enabled )
         {
             const auto flags{rtc.LatchAlarmsTriggeredFlags()};
             if ( flags & DS3231AlarmFlag_Alarm2 )
@@ -136,11 +119,6 @@ namespace RealTime
         rtcDateTime.InitWithEpoch32Time( std::chrono::system_clock::to_time_t( timePoint ) );
         rtc.SetDateTime( rtcDateTime );
         rtc.SetIsRunning( true );
-    }
-
-    auto isRunning() -> bool
-    {
-        return running;
     }
 
     auto process() -> void

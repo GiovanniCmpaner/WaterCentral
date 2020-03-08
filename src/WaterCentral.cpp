@@ -27,12 +27,13 @@ void setup()
 
     Peripherals::init();
     Configuration::init();
+    Display::init();
+
     Configuration::load( &cfg );
 
     RealTime::init();
     Database::init();
     WebInterface::init();
-    Display::init();
     Infos::init();
 
     button.onPress( []
@@ -46,10 +47,7 @@ void setup()
 
 void loop()
 {
-    if( RealTime::isRunning() )
-    {
-        Database::process();
-    }
+    Database::process();
     RealTime::process();
     WebInterface::process();
     Display::process();

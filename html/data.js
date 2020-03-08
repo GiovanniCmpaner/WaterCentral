@@ -141,6 +141,8 @@ function getData(filter) {
                 $("#result tbody tr").remove();
             }
 
+            let lastId = null;
+
             let template = $($.parseHTML($("#data_template").html()));
             for (const [i, d] of data.entries()) {
                 let row = template.clone();
@@ -163,15 +165,16 @@ function getData(filter) {
                     }
                 }
                 row.appendTo($("#result tbody"));
+                lastId = Math.max(lastId, d.id);
             }
 
             this.prevFilter = filter;
-            if (data.length > 0) {
+            if (lastId != null) {
                 if (this.prevFilter != null) {
-                    this.prevFilter.id = data[data.length - 1].id + 1;
+                    this.prevFilter.id = lastId + 1;
                 }
                 else {
-                    this.prevFilter = { id: data[data.length - 1].id + 1 };
+                    this.prevFilter = { id: lastId + 1 };
                 }
             }
 

@@ -4,14 +4,14 @@ $(document).ready(() => {
 });
 
 function drawGraphs(info) {
-    //for (const [i, sensor] of info.sensors.entries()) {
-    //    var canvas = document.getElementById(`sensor_graph_${i}`);
-    //    var ctx = canvas.getContext("2d");
-    //    //ctx.canvas.width = canvas.offsetWidth;
-    //    //ctx.canvas.height = canvas.offsetHeight;
-    //    ctx.fillStyle = "blue";
-    //    ctx.fillRect(0, 0, canvas.offsetWidth * (Math.min(Math.max(sensor.percent, 0.0), 100.0) / 100.0), canvas.offsetHeight);
-    //};
+    for (const [i, sensor] of info.sensors.entries()) {
+        var canvas = document.getElementById(`sensor_graph_${i}`);
+        var ctx = canvas.getContext("2d");
+        ctx.canvas.width = canvas.offsetWidth;
+        ctx.canvas.height = canvas.offsetHeight;
+        ctx.fillStyle = "blue";
+        ctx.fillRect(0, 0, canvas.offsetWidth * (Math.min(Math.max(sensor.percent, 0.0), 100.0) / 100.0), canvas.offsetHeight);
+    };
 }
 
 function getInfos() {
@@ -20,11 +20,12 @@ function getInfos() {
     infoMessage("Loading");
     $.ajax({
         type: "GET",
-        url: "http://192.168.1.200/infos.json",
+        url: "/infos.json",
         accepts: 'application/json',
         timeout: 5000
     })
         .done((info) => {
+            $("#values tbody tr").remove();
 
             if (!info.temperature || !info.humidity || !info.pressure) {
                 $("#temperature").prop("class", "error").text("ERROR");
@@ -40,13 +41,9 @@ function getInfos() {
             var template = $($.parseHTML($("#sensor_template").html()));
             for (const [i, sensor] of info.sensors.entries()) {
                 var row = template.clone();
-                for (var c of row) {
-                    if (c.id == "sensor_name") {
-                        c.textContent = sensor.name;
-                    }
-                    else if (c.id == "sensor_value") {
-                        c.textContent = sensor.value;
-                    }
+                row.find("#sensor_name").text(sensor.name);
+                row.find("#sensor_value").text(sensor.value);
+                for (let c of row.find("*")) {
                     if (c.id) {
                         c.id += `_${i}`;
                     }
@@ -54,7 +51,7 @@ function getInfos() {
                         c.htmlFor += `_${i}`;
                     }
                 }
-                row.appendTo($("#values.grid"));
+                row.appendTo($("#values tbody"));
             }
 
             successMessage("Done");

@@ -23,26 +23,20 @@
     <legend> Filter </legend>
     <form id="filter">
       <table>
-        <tr>
-          <td>
-            <label for="filter_id"> ID </label>
-            <input type="number" id="filter_id" min="0">
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <label for="filter_start_date"> Start </label>
-            <input type="date" id="filter_start_date">
-            <input type="time" id="filter_start_time" step="1">
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <label for="filter_end_date"> End </label>
-            <input type="date" id="filter_end_date">
-            <input type="time" id="filter_end_time" step="1">
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td> <label for="filter_id"> ID </label> </td>
+            <td> <input type="number" id="filter_id" min="0"> </td>
+          </tr>
+          <tr>
+            <td> <label for="filter_start_date"> Start </label> </td>
+            <td> <input type="date" id="filter_start_date"> <input type="time" id="filter_start_time" step="1"> </td>
+          </tr>
+          <tr>
+            <td> <label for="filter_end_date"> End </label> </td>
+            <td> <input type="date" id="filter_end_date"> <input type="time" id="filter_end_time" step="1"> </td>
+          </tr>
+        </tbody>
       </table>
       <input type="submit" id="filter_button" value="Filter">
       <input type="submit" id="filter_download" value="Download">
@@ -68,42 +62,24 @@
       <tbody>
         <template id="data_template">
           <tr>
-            <th>
-              <label for="data_id"> ID </label>
-              <span id="data_id"></span>
-            </th>
-            <td>
-              <label for="data_date"> Date </label>
-              <span id="data_date"></span>
-            </td>
-            <td>
-              <label for="data_time"> Time </label>
-              <span id="data_time"></span>
-            </td>
-            <td>
-              <label for="data_temperature"> Temperature (°C) </label>
-              <span id="data_temperature"></span>
-            </td>
-            <td>
-              <label for="data_humidity"> Humidity (%) </label>
-              <span id="data_humidity"></span>
-            </td>
-            <td>
-              <label for="data_pressure"> Pressure (hPa) </label>
-              <span id="data_pressure"></span>
-            </td>
-            <td>
-              <label for="data_sensor_0"> Sensor 1 (kPa) </label>
-              <span id="data_sensor_0"></span>
-            </td>
-            <td>
-              <label for="data_sensor_1"> Sensor 2 (kPa) </label>
-              <span id="data_sensor_1"></span>
-            </td>
-            <td>
-              <label for="data_sensor_2"> Sensor 3 (kPa) </label>
-              <span id="data_sensor_2"></span>
-            </td>
+            <th> <label for="data_id"> ID </label> </th>
+            <th> <span id="data_id"></span> </th>
+            <td> <label for="data_date"> Date </label> </td>
+            <td> <span id="data_date"></span> </td>
+            <td> <label for="data_time"> Time </label> </td>
+            <td> <span id="data_time"></span> </td>
+            <td> <label for="data_temperature"> Temperature (°C) </label>
+            <td> <span id="data_temperature"></span> </td>
+            <td> <label for="data_humidity"> Humidity (%) </label> </td>
+            <td> <span id="data_humidity"></span> </td>
+            <td> <label for="data_pressure"> Pressure (hPa) </label> </td>
+            <td> <span id="data_pressure"></span> </td>
+            <td> <label for="data_sensor_0"> Sensor 1 (kPa) </label> </td>
+            <td> <span id="data_sensor_0"></span> </td>
+            <td> <label for="data_sensor_1"> Sensor 2 (kPa) </label> </td>
+            <td> <span id="data_sensor_1"></span> </td>
+            <td> <label for="data_sensor_2"> Sensor 3 (kPa) </label> </td>
+            <td> <span id="data_sensor_2"></span> </td>
           </tr>
         </template>
       </tbody>

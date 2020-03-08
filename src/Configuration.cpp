@@ -53,9 +53,9 @@ static const Configuration defaultCfg
                 0.0,
                 395.6,
                 {
-                    +0.00115189,
-                        -0.10866961
-                    },
+                    0.00115189,
+                    0.10866961
+                },
                 {
                     true,
                     25.0
@@ -68,9 +68,9 @@ static const Configuration defaultCfg
                 49.18,
                 52.55,
                 {
-                    +0.00115442,
-                        -0.10876640
-                    },
+                    0.00115442,
+                    0.10876640
+                },
                 {
                     true,
                     40.0
@@ -84,7 +84,7 @@ static const Configuration defaultCfg
                 22.98,
                 {
                     0.00110177,
-                    -0.25609925
+                    0.25609925
                 },
                 {
                     true,
@@ -189,8 +189,8 @@ auto Configuration::serialize( ArduinoJson::JsonVariant& json ) const -> void
             {
                 auto calibration{ sensor["calibration"] };
 
-                calibration["factor"] = s.calibration.angularCoefficient;
-                calibration["offset"] = s.calibration.linearCoefficient;
+                calibration["angular_coefficient"] = s.calibration.angularCoefficient;
+                calibration["linear_coefficient"] = s.calibration.linearCoefficient;
             }
             {
                 auto alarm{ sensor["alarm"] };
@@ -420,14 +420,14 @@ auto Configuration::deserialize( const ArduinoJson::JsonVariant& json ) -> void
                 {
                     const auto calibration{ sensor["calibration"] };
                     {
-                        const auto factor{ calibration["factor"] };
+                        const auto factor{ calibration["angular_coefficient"] };
                         if( factor.is<double>() )
                         {
                             this->sensors[i].calibration.angularCoefficient = factor.as<double>();
                         }
                     }
                     {
-                        const auto offset{ calibration["offset"] };
+                        const auto offset{ calibration["linear_coefficient"] };
                         if( offset.is<double>() )
                         {
                             this->sensors[i].calibration.linearCoefficient = offset.as<double>();
