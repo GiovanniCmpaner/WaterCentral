@@ -194,8 +194,8 @@ namespace Display
 
     auto process() -> void
     {
-        Utils::periodic( std::chrono::milliseconds( 250 ), Display::check );
         Utils::periodic( std::chrono::milliseconds( 500 ), Display::update );
+        Utils::periodic( std::chrono::milliseconds( 250 ), Display::check );
         Utils::periodic( std::chrono::milliseconds( 750 ), Display::warning );
     }
 } // namespace Display

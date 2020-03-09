@@ -47,10 +47,10 @@ void setup()
 
 void loop()
 {
+    Infos::process();
     Database::process();
     RealTime::process();
     WebInterface::process();
     Display::process();
-    Infos::process();
     button.process();
 }

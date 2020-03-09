@@ -38,6 +38,19 @@ namespace Infos
     static float temperature{NAN};
     static float humidity{NAN};
 
+    static auto read( uint8_t index ) -> double
+    {
+        static constexpr std::array<double, 4> sensorsMax{50.0, 100.0, 500.0, 700.0};
+        static constexpr std::array<double, 4> sensorsSensivity{0.0900, 0.0450, 0.0090, 0.0064};
+        static constexpr double sensorsZeroOffset{-0.2000};
+
+        infos[index].analogRead.update();
+        const auto rawRead{infos[index].analogRead.getValue()};
+        const auto calibratedRead{ rawRead* cfg.sensors[index].calibration.angularCoefficient + cfg.sensors[index].calibration.linearCoefficient };
+        const auto sensorValue{ ( calibratedRead + sensorsZeroOffset ) / sensorsSensivity[cfg.sensors[index].type] };
+        const auto constrainedValue = constrain( sensorValue, 0.0, sensorsMax[cfg.sensors[index].type] );
+    }
+
     static auto update() -> void
     {
         bme.read( pressure, temperature, humidity, BME280::TempUnit_Celsius, BME280::PresUnit_hPa );
@@ -45,15 +58,10 @@ namespace Infos
         {
             if( cfg.sensors[n].enabled )
             {
-                static constexpr std::array<double, 4> sensorsMax{50.0, 100.0, 500.0, 700.0};
-                static constexpr std::array<double, 4> sensorsSensivity{0.0900, 0.0450, 0.0090, 0.0064};
-                static constexpr double sensorsZeroOffset{-0.2000};
-
-                infos[n].analogRead.update();
-                const auto rawRead{infos[n].analogRead.getValue()};
-                const auto calibratedRead{ rawRead* cfg.sensors[n].calibration.angularCoefficient + cfg.sensors[n].calibration.linearCoefficient };
-                const auto sensorValue{ ( calibratedRead + sensorsZeroOffset ) / sensorsSensivity[cfg.sensors[n].type] };
-                infos[n].value = constrain( sensorValue, 0.0, sensorsMax[cfg.sensors[n].type] );
+                static constexpr uint32_t updatePeriod{ 600000 };
+                static constexpr uint32_t sampleInterval{ 500 };
+                static constexpr double factor{ 2.0 / ( updatePeriod / sampleInterval + 1.0 ) };
+                infos[n].value = ( factor * read( n ) ) + ( ( 1.0 - factor ) * infos[n].value );
             }
         }
     }
@@ -91,6 +99,7 @@ namespace Infos
             {
                 infos[n].analogRead.begin( infos[n].pin, false );
                 infos[n].analogRead.setAnalogResolution( 4096 );
+                infos[n].value = read( n );
             }
         }
     }

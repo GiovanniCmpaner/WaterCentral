@@ -140,22 +140,26 @@ namespace WebInterface
 
         static auto handleConfigurationHtml( AsyncWebServerRequest* request ) -> void
         {
-            handleProgmem( request, "text/html", configuration_html_start, static_cast<size_t>( configuration_html_end - configuration_html_start ) );
+            //handleProgmem( request, "text/html", configuration_html_start, static_cast<size_t>( configuration_html_end - configuration_html_start ) );
+            request->send_P( 200, "text/html", configuration_html_start, static_cast<size_t>( configuration_html_end - configuration_html_start ) );
         }
 
         static auto handleConfigurationJs( AsyncWebServerRequest* request ) -> void
         {
-            handleProgmem( request, "application/javascript", configuration_js_start, static_cast<size_t>( configuration_js_end - configuration_js_start ) );
+            //handleProgmem( request, "application/javascript", configuration_js_start, static_cast<size_t>( configuration_js_end - configuration_js_start ) );
+            request->send_P( 200, "application/javascript", configuration_js_start, static_cast<size_t>( configuration_js_end - configuration_js_start ) );
         }
 
         static auto handleDataHtml( AsyncWebServerRequest* request ) -> void
         {
-            handleProgmem( request, "text/html", data_html_start, static_cast<size_t>( data_html_end - data_html_start ) );
+            //handleProgmem( request, "text/html", data_html_start, static_cast<size_t>( data_html_end - data_html_start ) );
+            request->send_P( 200, "text/html", data_html_start, static_cast<size_t>( data_html_end - data_html_start ) );
         }
 
         static auto handleDataJs( AsyncWebServerRequest* request ) -> void
         {
-            handleProgmem( request, "application/javascript", data_js_start, static_cast<size_t>( data_js_end - data_js_start ) );
+            //handleProgmem( request, "application/javascript", data_js_start, static_cast<size_t>( data_js_end - data_js_start ) );
+            request->send_P( 200, "application/javascript", data_js_start, static_cast<size_t>( data_js_end - data_js_start ) );
         }
 
         class comma_punct : public std::numpunct<char>
@@ -215,22 +219,26 @@ namespace WebInterface
 
         static auto handleJqueryJs( AsyncWebServerRequest* request ) -> void
         {
-            handleProgmem( request, "application/javascript", jquery_min_js_start, static_cast<size_t>( jquery_min_js_end - jquery_min_js_start ) );
+            //handleProgmem( request, "application/javascript", jquery_min_js_start, static_cast<size_t>( jquery_min_js_end - jquery_min_js_start ) );
+            request->send_P( 200, "application/javascript", jquery_min_js_start, static_cast<size_t>( jquery_min_js_end - jquery_min_js_start ) );
         }
 
         static auto handleInfosHtml( AsyncWebServerRequest* request ) -> void
         {
-            handleProgmem( request, "text/html", infos_html_start, static_cast<size_t>( infos_html_end - infos_html_start ) );
+            //handleProgmem( request, "text/html", infos_html_start, static_cast<size_t>( infos_html_end - infos_html_start ) );
+            request->send_P( 200, "text/html", infos_html_start, static_cast<size_t>( infos_html_end - infos_html_start ) );
         }
 
         static auto handleInfosJs( AsyncWebServerRequest* request ) -> void
         {
-            handleProgmem( request, "application/javascript", infos_js_start, static_cast<size_t>( infos_js_end - infos_js_start ) );
+            //handleProgmem( request, "application/javascript", infos_js_start, static_cast<size_t>( infos_js_end - infos_js_start ) );
+            request->send_P( 200, "application/javascript", infos_js_start, static_cast<size_t>( infos_js_end - infos_js_start ) );
         }
 
         static auto handleStyleCss( AsyncWebServerRequest* request ) -> void
         {
-            handleProgmem( request, "text/css", style_css_start, static_cast<size_t>( style_css_end - style_css_start ) );
+            //handleProgmem( request, "text/css", style_css_start, static_cast<size_t>( style_css_end - style_css_start ) );
+            request->send_P( 200, "text/css", style_css_start, static_cast<size_t>( style_css_end - style_css_start ) );
         }
 
     } // namespace Get
