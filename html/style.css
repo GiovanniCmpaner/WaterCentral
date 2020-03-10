@@ -64,13 +64,13 @@ table tbody th:nth-child(even), table tbody td:nth-child(even) {
 
 /***************************************************/
 
-.responsive tr, .responsive td, .responsive th {
-  text-align: center;
-}
-
 @media (min-width: 30em) {
+  .responsive tr, .responsive td, .responsive th {
+    text-align: center;
+  }
   .responsive input, .responsive select {
     width: 100%;
+    min-width: 6em;
   }
   .responsive tbody th:nth-child(odd), .responsive tbody td:nth-child(odd) {
     display: none;

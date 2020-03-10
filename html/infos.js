@@ -1,7 +1,16 @@
 $(document).ready(() => {
-
-    getInfos().then((info) => drawGraphs(info)).then(() => clearMessage());
+    updateInfos(true);
+    setInterval(updateInfos, 5000);
 });
+
+function updateInfos(first) {
+    first ? infoMessage("Loading") : null;
+    getInfos()
+        .then((info) => drawGraphs(info))
+        .then(() => first ? successMessage("Done") : null)
+        .then(() => clearMessage())
+        .fail((error) => errorMessage(error));
+}
 
 function drawGraphs(info) {
     for (const [i, sensor] of info.sensors.entries()) {
@@ -17,7 +26,7 @@ function drawGraphs(info) {
 function getInfos() {
     var deferred = new $.Deferred();
 
-    infoMessage("Loading");
+
     $.ajax({
         type: "GET",
         url: "/infos.json",
@@ -53,13 +62,10 @@ function getInfos() {
                 }
                 row.appendTo($("#values tbody"));
             }
-
-            successMessage("Done");
             deferred.resolve(info);
         })
         .fail((xhr, status, error) => {
-            errorMessage(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`);
-            deferred.reject();
+            deferred.reject(status == "timeout" ? "Fail: Timeout" : `Fail: ${xhr.status} ${xhr.statusText}`);
         });
     return deferred.promise();
 }

@@ -26,10 +26,10 @@ function handleFilter() {
 function handleDownload() {
     var filter = buildfilter();
     if (filter) {
-        window.location = `/data.csv`;
+        window.location = `/data.csv?${URLSearchParams(filter).toString()}`;
     }
     else {
-        window.location = `/data.csv?${URLSearchParams(filter).toString()}`;
+        window.location = `/data.csv`;
     }
 }
 
@@ -58,7 +58,7 @@ function getDateTime() {
     var deferred = new $.Deferred();
     $.ajax({
         type: "GET",
-        url: "http://192.168.1.200/datetime.json",
+        url: "/datetime.json",
         accepts: 'application/json',
         timeout: 5000,
         beforeSend: () => {
@@ -127,7 +127,7 @@ function getData(filter) {
 
     $.ajax({
         type: "GET",
-        url: "http://192.168.1.200/data.json",
+        url: "/data.json",
         accepts: 'application/json',
         timeout: 5000,
         data: filter,

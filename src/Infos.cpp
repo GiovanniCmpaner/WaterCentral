@@ -48,7 +48,7 @@ namespace Infos
         const auto rawRead{infos[index].analogRead.getValue()};
         const auto calibratedRead{ rawRead* cfg.sensors[index].calibration.angularCoefficient + cfg.sensors[index].calibration.linearCoefficient };
         const auto sensorValue{ ( calibratedRead + sensorsZeroOffset ) / sensorsSensivity[cfg.sensors[index].type] };
-        const auto constrainedValue = constrain( sensorValue, 0.0, sensorsMax[cfg.sensors[index].type] );
+        return constrain( sensorValue, 0.0, sensorsMax[cfg.sensors[index].type] );
     }
 
     static auto update() -> void

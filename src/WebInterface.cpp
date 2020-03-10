@@ -13,6 +13,7 @@
 #include <Update.h>
 #include <esp_task_wdt.h>
 #include <soc/rtc_wdt.h>
+#include <rom/rtc.h>
 
 #include "Configuration.hpp"
 #include "Database.hpp"
@@ -432,7 +433,7 @@ namespace WebInterface
         log_d( "password = %s", cfg.accessPoint.password.data() );
         log_d( "duration = %u", cfg.accessPoint.duration );
 
-        if ( not cfg.accessPoint.enabled )
+        if ( not cfg.accessPoint.enabled or rtc_get_reset_reason( 0 ) == DEEPSLEEP_RESET )
         {
             WiFi.mode( WIFI_MODE_NULL );
             return false;
