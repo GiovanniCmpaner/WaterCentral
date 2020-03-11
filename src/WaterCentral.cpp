@@ -36,11 +36,7 @@ void setup()
     WebInterface::init();
     Infos::init();
 
-    button.onPress( []
-    {
-        Display::ignore();
-    } );
-    button.onPress( 5000, nullptr, RealTime::sleep );
+    button.onPress( Display::ignore );
 
     log_d( "end" );
 }

@@ -79,7 +79,7 @@ namespace RealTime
         }
 
         esp_sleep_enable_ext0_wakeup( static_cast<gpio_num_t>( Peripherals::DS3231::SQW_INT ), 0 );
-        esp_sleep_enable_ext0_wakeup( static_cast<gpio_num_t>( Peripherals::BTN ), 0 );
+        //esp_sleep_enable_ext0_wakeup( static_cast<gpio_num_t>( Peripherals::BTN ), 0 );
     }
 
     static auto checkSleep() -> void
