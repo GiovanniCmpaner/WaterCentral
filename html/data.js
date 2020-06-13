@@ -26,7 +26,7 @@ function handleFilter() {
 function handleDownload() {
     var filter = buildfilter();
     if (filter) {
-        window.location = `/data.csv?${URLSearchParams(filter).toString()}`;
+        window.location = `/data.csv?${new URLSearchParams(filter).toString()}`;
     }
     else {
         window.location = `/data.csv`;

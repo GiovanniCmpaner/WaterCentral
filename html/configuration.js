@@ -51,7 +51,7 @@ function setDateTime() {
         url: "/datetime.json",
         contentType: 'application/json',
         timeout: 5000,
-        data: newDateTime,
+        data: JSON.stringify(newDateTime),
         beforeSend: () => {
             $("input,select").prop("disabled", true);
             infoMessage("Sending");
